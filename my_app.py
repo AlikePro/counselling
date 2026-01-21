@@ -6,7 +6,6 @@ import pandas as pd
 from pathlib import Path
 import os
 import requests
-import httpx
 import socket
 from dotenv import load_dotenv
 
@@ -144,7 +143,7 @@ def _try_extract_assistant_text(data):
         return str(data)
 
 
-async def _groq_post_with_auth_variants(api_url, key, body, timeout=50):
+def _groq_post_with_auth_variants(api_url, key, body, timeout=50):
     """Try multiple auth header variants for GROQ; return (status_code, text, parsed_json_or_None)."""
     variants = [
         {"Authorization": f"Bearer {key}"},
@@ -154,36 +153,35 @@ async def _groq_post_with_auth_variants(api_url, key, body, timeout=50):
         {"Authorization": f"Bearer {key}", "Cookie": f"session={key}"},
     ]
 
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        last_status = None
-        last_text = None
-        for hdrs in variants:
-            headers = hdrs.copy()
-            headers.setdefault("Content-Type", "application/json")
+    last_status = None
+    last_text = None
+    for hdrs in variants:
+        headers = hdrs.copy()
+        headers.setdefault("Content-Type", "application/json")
+        try:
+            r = requests.post(api_url, headers=headers, json=body, timeout=timeout)
+        except Exception as e:
+            cause = getattr(e, "__cause__", None)
+            txt = str(e)
+            if isinstance(cause, socket.gaierror) or "getaddrinfo" in txt.lower():
+                return None, f"Network/DNS error: {txt}", None
+            last_status = None
+            last_text = f"Request error: {txt}"
+            continue
+        last_status = r.status_code
+        last_text = r.text or ""
+        if r.status_code == 200:
             try:
-                r = await client.post(api_url, headers=headers, json=body)
-            except Exception as e:
-                cause = getattr(e, "__cause__", None)
-                txt = str(e)
-                if isinstance(cause, socket.gaierror) or "getaddrinfo" in txt.lower():
-                    return None, f"Network/DNS error: {txt}", None
-                last_status = None
-                last_text = f"Request error: {txt}"
-                continue
-            last_status = r.status_code
-            last_text = r.text or ""
-            if r.status_code == 200:
-                try:
-                    return 200, r.text, r.json()
-                except Exception:
-                    return 200, r.text, None
-            if r.status_code == 401:
-                continue
-            try:
-                return r.status_code, r.text, r.json()
+                return 200, r.text, r.json()
             except Exception:
-                return r.status_code, r.text, None
-        return last_status, last_text, None
+                return 200, r.text, None
+        if r.status_code == 401:
+            continue
+        try:
+            return r.status_code, r.text, r.json()
+        except Exception:
+            return r.status_code, r.text, None
+    return last_status, last_text, None
 
 
 def groq_post_with_auth_variants_sync(api_url, key, body, timeout=50):
@@ -201,7 +199,7 @@ def groq_post_with_auth_variants_sync(api_url, key, body, timeout=50):
         headers = hdrs.copy()
         headers.setdefault("Content-Type", "application/json")
         try:
-            r = httpx.post(api_url, headers=headers, json=body, timeout=timeout)
+            r = requests.post(api_url, headers=headers, json=body, timeout=timeout)
         except Exception as e:
             cause = getattr(e, "__cause__", None)
             txt = str(e)
@@ -302,7 +300,7 @@ def test_groq_endpoint(api_url, timeout=5):
     except Exception as e:
         return False, f"DNS error: {e}"
     try:
-        r = httpx.request("HEAD", api_url, timeout=timeout)
+        r = requests.head(api_url, timeout=timeout)
         if 200 <= r.status_code < 400:
             return True, f"OK — {r.status_code}"
         return False, f"HTTP {r.status_code}: {r.text[:300]}"
