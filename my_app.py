@@ -70,6 +70,10 @@ if "selected_uni" not in st.session_state:
 if "ai_messages" not in st.session_state:
     st.session_state.ai_messages = []
 
+# AI recommendations (list of dicts: name, country_code, url, reason)
+if "ai_recommended_unis" not in st.session_state:
+    st.session_state.ai_recommended_unis = []
+
 if "use_offline_ai" not in st.session_state:
     st.session_state["use_offline_ai"] = False
 
@@ -1339,6 +1343,33 @@ with tabs[3]:
     st.header("Universities 🌍")
     st.caption("Ищи университеты по названию или коду страны и сразу переходи на их сайт. Плюс — избранное и рандомный выбор.")
 
+    # ---- Recommended by AI ----
+    recs = st.session_state.get("ai_recommended_unis", [])
+    if recs:
+        st.markdown("### 🔥 Recommended for you")
+        for r in recs:
+            rc1, rc2 = st.columns([4,1])
+            with rc1:
+                name = r.get("name")
+                url = r.get("url", "")
+                country = r.get("country_code", "")
+                reason = r.get("reason", "")
+                if url:
+                    st.markdown(f"**[{name}]({url})** — {country}")
+                else:
+                    st.markdown(f"**{name}** — {country}")
+                if reason:
+                    st.caption(reason)
+            with rc2:
+                if st.button("⭐ Add", key=f"rec_add_{name}"):
+                    if not any(fav.get("name") == name and fav.get("url") == url for fav in st.session_state.uni_favorites):
+                        st.session_state.uni_favorites.append({"name": name, "url": url, "country_code": country})
+                        st.success(f"Added {name} to favorites")
+                        st.experimental_rerun()
+        if st.button("Clear recommendations", key="clear_ai_recs"):
+            st.session_state.ai_recommended_unis = []
+            st.experimental_rerun()
+
     if universities_df is None:
         st.error("Файл world-universities.csv не найден. Положи его рядом с этим скриптом и перезапусти приложение.")
     else:
@@ -1515,24 +1546,8 @@ with tabs[4]:
         else:
             st.write("No favorites yet.")
     with col3:
-        st.subheader("Estimated chances (favorites)")
-        rows = []
-        for fav in st.session_state.uni_favorites:
-            uni_row = None
-            if universities_df is not None:
-                name_col_main2 = ensure_name_column(universities_df)
-                matches = universities_df[
-                    universities_df[name_col_main2].astype(str).str.lower()
-                    == str(fav.get("name", "")).lower()
-                ]
-                if not matches.empty:
-                    uni_row = matches.iloc[0].to_dict()
-            rows.append({"uni": fav.get("name"), "score": score})
-        if rows:
-            df_scores = pd.DataFrame(rows).set_index("uni")
-            st.table(df_scores)
-        else:
-            st.write("No favorites to evaluate.")
+        st.subheader("Notes")
+        st.write("Automated 'chance' scoring has been removed. Use the AI Advisor for qualitative recommendations.")
 
     st.markdown("---")
     export_payload_full = {
@@ -1812,9 +1827,14 @@ with tabs[6]:
             }
 
             messages = [system_prompt] + st.session_state.ai_messages[-6:]
+            # Ask model to include a human-readable recommendations section at the end
             messages[-1]["content"] = (
                 f"Профиль студента:\n{profile_summary}\n\n"
-                f"Вопрос: {messages[-1]['content']}"
+                f"Вопрос: {messages[-1]['content']}\n\n"
+                "Пожалуйста, в конце ответа добавь секцию 'Recommended universities:' (по одной строке на университет) "
+                "в формате: 'University Name — CountryCode — URL — Короткая причина'.\n"
+                "Пример:\nRecommended universities:\nHarvard University — US — https://www.harvard.edu — Strong CS program.\n"
+                "Это поможет приложению показать рекомендации в разделе 'Universities'."
             )
 
             try:
@@ -1837,6 +1857,69 @@ with tabs[6]:
                 ai_text = data["choices"][0]["message"]["content"]
             except Exception as e:
                 ai_text = f"❌ Ошибка при запросе к Groq: {e}"
+
+            # Try to extract recommendations from a readable 'Recommended universities' section (fallback to JSON parsing)
+            try:
+                import re
+                parsed_recs = []
+                # Look for English or Russian heading
+                m = re.search(r'(?:Recommended universities|Recommended for you|Recommendations|Рекомендуемые университеты|Рекомендуемые):\s*\n', ai_text, re.I)
+                if m:
+                    rest = ai_text[m.end():]
+                    lines = rest.splitlines()
+                    for line in lines:
+                        if not line.strip():
+                            break
+                        line_clean = re.sub(r'^\s*(?:-|\d+\.)\s*', '', line).strip()
+                        url_match = re.search(r'(https?://\S+)', line_clean)
+                        url = url_match.group(1) if url_match else ''
+                        if url:
+                            line_no_url = line_clean.replace(url, '').strip().strip('-–—').strip()
+                        else:
+                            line_no_url = line_clean
+                        parts = re.split(r'\s*[-–—|]\s*', line_no_url)
+                        name = parts[0].strip() if parts else line_no_url.strip()
+                        country = ''
+                        reason = ''
+                        if len(parts) >= 2:
+                            maybe_country = parts[1].strip()
+                            if re.match(r'^[A-Za-z]{2,3}$', maybe_country) or len(maybe_country) <= 3:
+                                country = maybe_country
+                                if len(parts) >= 3:
+                                    reason = parts[2].strip()
+                            else:
+                                reason = parts[1].strip()
+                        if name:
+                            parsed_recs.append({"name": name, "country_code": country, "url": url, "reason": reason})
+                # fallback: try JSON-like block if none found
+                if not parsed_recs:
+                    json_block = None
+                    m = re.search(r'```json\s*(\{.*?\}|\[.*?\])\s*```', ai_text, re.S)
+                    if m:
+                        json_block = m.group(1)
+                    else:
+                        m2 = re.search(r'(\{(?:.|\n)*?\"recommended_unis\"(?:.|\n)*?\})', ai_text, re.S)
+                        if m2:
+                            json_block = m2.group(1)
+                    if json_block:
+                        parsed = json.loads(json_block)
+                        if isinstance(parsed, dict) and 'recommended_unis' in parsed:
+                            candidate = parsed['recommended_unis']
+                        else:
+                            candidate = parsed if isinstance(parsed, list) else []
+                        if isinstance(candidate, list):
+                            for item in candidate:
+                                if isinstance(item, dict):
+                                    name = item.get('name') or item.get('university') or item.get('title')
+                                    country = item.get('country_code', '')
+                                    url = item.get('url', '')
+                                    reason = item.get('reason', '')
+                                    if name:
+                                        parsed_recs.append({"name": name, "country_code": country, "url": url, "reason": reason})
+                if parsed_recs:
+                    st.session_state.ai_recommended_unis = parsed_recs
+            except Exception:
+                pass
 
             st.session_state.ai_messages.append(
                 {"role": "assistant", "content": ai_text}
