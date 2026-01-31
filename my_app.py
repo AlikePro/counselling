@@ -12,9 +12,10 @@ import io
 # ReportLab PDF support (optional)
 REPORTLAB_AVAILABLE = True
 try:
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, ListFlowable, ListItem
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.pagesizes import letter
+    from reportlab.lib import colors
 except Exception:
     REPORTLAB_AVAILABLE = False
 
@@ -46,6 +47,14 @@ if "profile" not in st.session_state:
 if "tasks" not in st.session_state:
     st.session_state.tasks = []
 
+# Regions for tasks board (default columns)
+if "task_regions" not in st.session_state:
+    st.session_state.task_regions = ["Canada", "USA", "Europe", "Asia"]
+
+# ID counter for tasks (ensures stable keys)
+if "task_id_counter" not in st.session_state:
+    st.session_state.task_id_counter = 0
+
 if "uni_favorites" not in st.session_state:
     st.session_state.uni_favorites = []
 
@@ -67,6 +76,14 @@ if "use_offline_ai" not in st.session_state:
 if "groq_api_url" not in st.session_state:
     st.session_state["groq_api_url"] = GROQ_API_URL
 
+# Ensure legacy tasks have region and id
+for t in st.session_state.tasks:
+    if "region" not in t:
+        t["region"] = st.session_state.task_regions[0] if st.session_state.task_regions else "Default"
+    if "id" not in t:
+        st.session_state.task_id_counter += 1
+        t["id"] = st.session_state.task_id_counter
+
 # ---------------------------------------
 # Global page config & header
 # ---------------------------------------
@@ -75,6 +92,117 @@ st.set_page_config(
     page_icon="🎓",
     layout="wide",
 )
+
+# Nicely formatted PDF generator (placed before UI so sidebar can call it)
+def generate_export_pdf(export_payload: dict) -> bytes:
+    """Generate a nicely formatted PDF (bytes) containing full export payload."""
+    if not REPORTLAB_AVAILABLE:
+        raise ImportError("reportlab is not installed. Install with 'pip install reportlab'")
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+    styles = getSampleStyleSheet()
+    normal = styles["Normal"]
+    heading = styles["Heading2"]
+    small = ParagraphStyle("Small", parent=normal, fontSize=9)
+
+    story = []
+    story.append(Paragraph("College Planner — Full Export", styles["Title"]))
+    story.append(Spacer(1, 8))
+    story.append(Paragraph(f"Exported: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", small))
+    story.append(Spacer(1, 12))
+
+    # Profile
+    profile = export_payload.get("profile", {})
+    story.append(Paragraph("Profile", heading))
+    def add_kv(k, v):
+        story.append(Paragraph(f"<b>{k}:</b> {v}", normal))
+    add_kv("GPA", profile.get("gpa", "—"))
+    add_kv("GPA scale", profile.get("gpa_scale", "—"))
+    add_kv("Intended major", profile.get("major", "—"))
+    add_kv("School", profile.get("school", "—"))
+
+    # Awards / activities as numbered list
+    awards = profile.get("awards", [])
+    if awards:
+        story.append(Paragraph("Honors / Activities:", normal))
+        numbered = ListFlowable([
+            ListItem(Paragraph(str(item), normal), value=i+1) for i, item in enumerate(awards)
+        ], bulletType="1", start="1")
+        story.append(numbered)
+    else:
+        story.append(Paragraph("Honors / Activities: None", normal))
+    story.append(Spacer(1, 12))
+
+    # Exams
+    exams = profile.get("exams", {})
+    story.append(Paragraph("Exams & Scores", heading))
+    if exams:
+        for i, (ename, edata) in enumerate(exams.items(), 1):
+            parts = [f"{ename} — {edata.get('status', 'N/A')}"]
+            if edata.get("score"):
+                parts.append(f"score: {edata.get('score')}")
+            if edata.get("expected"):
+                parts.append(f"expected: {edata.get('expected')}")
+            if edata.get("date"):
+                parts.append(f"date: {edata.get('date')}")
+            if edata.get("planned_date"):
+                parts.append(f"planned: {edata.get('planned_date')}")
+            story.append(Paragraph(f"{i}. " + "; ".join(parts), normal))
+    else:
+        story.append(Paragraph("No exam data", normal))
+    story.append(Spacer(1, 12))
+
+    # Tasks
+    story.append(Paragraph("Tasks", heading))
+    tasks = export_payload.get("tasks", [])
+    if tasks:
+        numbered_tasks = ListFlowable([
+            ListItem(Paragraph(f"{t.get('title')} — due: {t.get('due')} — done: {t.get('done')}", normal))
+            for t in tasks
+        ], bulletType="1", start="1")
+        story.append(numbered_tasks)
+    else:
+        story.append(Paragraph("No tasks", normal))
+    story.append(Spacer(1, 12))
+
+    # Favorites
+    story.append(Paragraph("Favorites", heading))
+    favs = export_payload.get("favorites", [])
+    if favs:
+        for f in favs:
+            story.append(Paragraph(f"- {f.get('name')} ({f.get('country_code','')}) — {f.get('url')}", normal))
+    else:
+        story.append(Paragraph("No favorites", normal))
+    story.append(Spacer(1, 12))
+
+    # Deadlines as table
+    story.append(Paragraph("Deadlines", heading))
+    dls = export_payload.get("deadlines", [])
+    if dls:
+        table_data = [["University", "Type", "Date", "Note"]]
+        for d in dls:
+            table_data.append([d.get("uni", ""), d.get("type", ""), d.get("date", ""), d.get("note", "")])
+        tbl = Table(table_data, colWidths=[150, 120, 80, 180])
+        tbl.setStyle(TableStyle([
+            ("GRID", (0,0), (-1,-1), 0.5, colors.grey),
+            ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
+        ]))
+        story.append(tbl)
+    else:
+        story.append(Paragraph("No deadlines", normal))
+    story.append(Spacer(1, 12))
+
+    # Notes
+    story.append(Paragraph("Notes", heading))
+    notes = export_payload.get("notes", {})
+    if notes:
+        for uni, note in notes.items():
+            story.append(Paragraph(f"- {uni}: {note}", normal))
+    else:
+        story.append(Paragraph("No notes", normal))
+
+    doc.build(story)
+    return buf.getvalue()
 
 with st.container():
     left, right = st.columns([1, 5])
@@ -110,7 +238,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### ⚙️ Data")
 
-    # Always show a single download button (no extra click)
+    # Export (PDF only)
     export_payload = {
         "profile": st.session_state.profile,
         "tasks": st.session_state.tasks,
@@ -118,11 +246,19 @@ with st.sidebar:
         "deadlines": st.session_state.deadlines,
         "notes": st.session_state.uni_notes,
     }
-    st.download_button(
-        "⬇️ Export data (JSON)",
-        data=json.dumps(export_payload, indent=2),
-        file_name="college_planner_export.json",
-    )
+    if REPORTLAB_AVAILABLE:
+        try:
+            pdf_bytes_side = generate_export_pdf(export_payload)
+            st.download_button(
+                "⬇️ Export data (PDF)",
+                data=pdf_bytes_side,
+                file_name="college_planner_export.pdf",
+                mime="application/pdf",
+            )
+        except Exception as e:
+            st.error("PDF export failed: " + str(e))
+    else:
+        st.warning("PDF export unavailable — install 'reportlab' and redeploy to enable PDF export.")
 
 # ---------------------------------------
 # Utility functions
@@ -233,67 +369,111 @@ def groq_post_with_auth_variants_sync(api_url, key, body, timeout=50):
 
 
 def generate_export_pdf(export_payload: dict) -> bytes:
-    """Generate a simple PDF (bytes) containing full export payload."""
+    """Generate a nicely formatted PDF (bytes) containing full export payload."""
     if not REPORTLAB_AVAILABLE:
         raise ImportError("reportlab is not installed. Install with 'pip install reportlab'")
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
     styles = getSampleStyleSheet()
-    story = []
+    normal = styles["Normal"]
+    heading = styles["Heading2"]
+    small = ParagraphStyle("Small", parent=normal, fontSize=9)
 
+    story = []
     story.append(Paragraph("College Planner — Full Export", styles["Title"]))
+    story.append(Spacer(1, 8))
+    story.append(Paragraph(f"Exported: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", small))
     story.append(Spacer(1, 12))
 
     # Profile
     profile = export_payload.get("profile", {})
-    story.append(Paragraph("Profile", styles["Heading2"]))
-    for k, v in profile.items():
-        if isinstance(v, list):
-            story.append(Paragraph(f"<b>{k}:</b> " + ", ".join(str(x) for x in v), styles["Normal"]))
-        elif isinstance(v, dict):
-            story.append(Paragraph(f"<b>{k}:</b> " + json.dumps(v, ensure_ascii=False), styles["Normal"]))
-        else:
-            story.append(Paragraph(f"<b>{k}:</b> {v}", styles["Normal"]))
+    story.append(Paragraph("Profile", heading))
+    def add_kv(k, v):
+        story.append(Paragraph(f"<b>{k}:</b> {v}", normal))
+    add_kv("GPA", profile.get("gpa", "—"))
+    add_kv("GPA scale", profile.get("gpa_scale", "—"))
+    add_kv("Intended major", profile.get("major", "—"))
+    add_kv("School", profile.get("school", "—"))
+
+    # Awards / activities as numbered list
+    awards = profile.get("awards", [])
+    if awards:
+        story.append(Paragraph("Honors / Activities:", normal))
+        numbered = ListFlowable([
+            ListItem(Paragraph(str(item), normal), value=i+1) for i, item in enumerate(awards)
+        ], bulletType="1", start="1")
+        story.append(numbered)
+    else:
+        story.append(Paragraph("Honors / Activities: None", normal))
+    story.append(Spacer(1, 12))
+
+    # Exams
+    exams = profile.get("exams", {})
+    story.append(Paragraph("Exams & Scores", heading))
+    if exams:
+        for i, (ename, edata) in enumerate(exams.items(), 1):
+            parts = [f"{ename} — {edata.get('status', 'N/A')}"]
+            if edata.get("score"):
+                parts.append(f"score: {edata.get('score')}")
+            if edata.get("expected"):
+                parts.append(f"expected: {edata.get('expected')}")
+            if edata.get("date"):
+                parts.append(f"date: {edata.get('date')}")
+            if edata.get("planned_date"):
+                parts.append(f"planned: {edata.get('planned_date')}")
+            story.append(Paragraph(f"{i}. " + "; ".join(parts), normal))
+    else:
+        story.append(Paragraph("No exam data", normal))
     story.append(Spacer(1, 12))
 
     # Tasks
-    story.append(Paragraph("Tasks", styles["Heading2"]))
+    story.append(Paragraph("Tasks", heading))
     tasks = export_payload.get("tasks", [])
     if tasks:
-        for t in tasks:
-            story.append(Paragraph(f"- {t.get('title')} — due: {t.get('due')} — done: {t.get('done')}", styles["Normal"]))
+        numbered_tasks = ListFlowable([
+            ListItem(Paragraph(f"{t.get('title')} — due: {t.get('due')} — done: {t.get('done')}", normal))
+            for t in tasks
+        ], bulletType="1", start="1")
+        story.append(numbered_tasks)
     else:
-        story.append(Paragraph("No tasks", styles["Normal"]))
+        story.append(Paragraph("No tasks", normal))
     story.append(Spacer(1, 12))
 
     # Favorites
-    story.append(Paragraph("Favorites", styles["Heading2"]))
+    story.append(Paragraph("Favorites", heading))
     favs = export_payload.get("favorites", [])
     if favs:
         for f in favs:
-            story.append(Paragraph(f"- {f.get('name')} ({f.get('country_code')}) — {f.get('url')}", styles["Normal"]))
+            story.append(Paragraph(f"- {f.get('name')} ({f.get('country_code','')}) — {f.get('url')}", normal))
     else:
-        story.append(Paragraph("No favorites", styles["Normal"]))
+        story.append(Paragraph("No favorites", normal))
     story.append(Spacer(1, 12))
 
-    # Deadlines
-    story.append(Paragraph("Deadlines", styles["Heading2"]))
+    # Deadlines as table
+    story.append(Paragraph("Deadlines", heading))
     dls = export_payload.get("deadlines", [])
     if dls:
+        table_data = [["University", "Type", "Date", "Note"]]
         for d in dls:
-            story.append(Paragraph(f"- {d.get('uni')} — {d.get('type')} — {d.get('date')} — {d.get('note','')}", styles["Normal"]))
+            table_data.append([d.get("uni", ""), d.get("type", ""), d.get("date", ""), d.get("note", "")])
+        tbl = Table(table_data, colWidths=[150, 120, 80, 180])
+        tbl.setStyle(TableStyle([
+            ("GRID", (0,0), (-1,-1), 0.5, colors.grey),
+            ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
+        ]))
+        story.append(tbl)
     else:
-        story.append(Paragraph("No deadlines", styles["Normal"]))
+        story.append(Paragraph("No deadlines", normal))
     story.append(Spacer(1, 12))
 
     # Notes
-    story.append(Paragraph("Notes", styles["Heading2"]))
+    story.append(Paragraph("Notes", heading))
     notes = export_payload.get("notes", {})
     if notes:
         for uni, note in notes.items():
-            story.append(Paragraph(f"- {uni}: {note}", styles["Normal"]))
+            story.append(Paragraph(f"- {uni}: {note}", normal))
     else:
-        story.append(Paragraph("No notes", styles["Normal"]))
+        story.append(Paragraph("No notes", normal))
 
     doc.build(story)
     return buf.getvalue()
@@ -587,6 +767,45 @@ def generate_mock_advice(profile: dict, question: str = None) -> str:
         resp += f"- {i}. {r}\n"
     resp += "\n(Это локальная заглушка — при восстановлении сети приложение использует реальную модель.)"
     return resp
+
+# Helper functions for task board
+def move_task_region(task_id: int, direction: int):
+    """Move task to neighboring region: direction -1 (left), +1 (right)."""
+    regions = st.session_state.get("task_regions", [])
+    for t in st.session_state.tasks:
+        if t.get("id") == task_id:
+            try:
+                idx = regions.index(t.get("region")) if t.get("region") in regions else 0
+                new_idx = max(0, min(len(regions) - 1, idx + direction))
+                t["region"] = regions[new_idx]
+            except Exception:
+                t["region"] = regions[0] if regions else t.get("region")
+            break
+
+
+def reorder_task_in_region(task_id: int, up: bool = True):
+    """Move task up or down within its region."""
+    tasks = st.session_state.tasks
+    # find global index
+    for i, t in enumerate(tasks):
+        if t.get("id") == task_id:
+            region = t.get("region")
+            region_indices = [j for j, it in enumerate(tasks) if it.get("region") == region]
+            pos = region_indices.index(i)
+            if up and pos > 0:
+                j_swap = region_indices[pos - 1]
+                tasks[i], tasks[j_swap] = tasks[j_swap], tasks[i]
+            if (not up) and (pos < len(region_indices) - 1):
+                j_swap = region_indices[pos + 1]
+                tasks[i], tasks[j_swap] = tasks[j_swap], tasks[i]
+            break
+
+
+def toggle_task_done(task_id: int, done_value: bool):
+    for t in st.session_state.tasks:
+        if t.get("id") == task_id:
+            t["done"] = bool(done_value)
+            break
 
 # ---------------------------------------
 # Load data
@@ -900,8 +1119,7 @@ with tabs[1]:
             })
             st.success("Profile saved")
 
-    with st.expander("📋 Raw profile JSON (for backup/debug)"):
-        st.json(st.session_state.profile)
+    
 
     # --- Exams subsection ---
     st.markdown("---")
@@ -984,48 +1202,135 @@ with tabs[1]:
                 st.write(f"⏳ **{exam_name}**: Expected {expected} (planned {planned_date})")
 
 # ---------------------------------------
-# Tasks Tab
+# Tasks Tab — Regional Kanban
 # ---------------------------------------
 with tabs[2]:
-    st.header("✅ Tasks")
+    st.header("✅ Tasks — Regional Board")
+    st.caption("Organize tasks by region. Add custom regions and manage tasks (move, reorder, complete).")
 
-    with st.form("task_form"):
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            title = st.text_input(
-                "Task",
-                placeholder="Write motivation letter for ETH Zürich",
-            )
-        with col2:
-            due = st.date_input("Due date", datetime.now().date())
-        add_task = st.form_submit_button("➕ Add task")
+    # Regions manager
+    st.subheader("Regions")
+    col_r1, col_r2 = st.columns([3, 1])
+    with col_r1:
+        st.write(", ".join(st.session_state.task_regions))
+        new_region = st.text_input("Add region", key="add_region_input")
+    with col_r2:
+        if st.button("Add region", key="add_region_btn"):
+            nr = new_region.strip()
+            if nr and nr not in st.session_state.task_regions:
+                st.session_state.task_regions.append(nr)
+                st.success(f"Region '{nr}' added.")
+                st.experimental_rerun()
 
-        if add_task and title.strip():
+    rem_region = st.selectbox("Remove region", [""] + st.session_state.task_regions, key="remove_region_select")
+    if rem_region:
+        if st.button("Remove region", key="remove_region_btn"):
+            if rem_region in st.session_state.task_regions:
+                # move tasks in removed region to first region
+                target = st.session_state.task_regions[0] if st.session_state.task_regions else None
+                for t in st.session_state.tasks:
+                    if t.get("region") == rem_region:
+                        t["region"] = target
+                st.session_state.task_regions.remove(rem_region)
+                st.success(f"Region '{rem_region}' removed.")
+                st.experimental_rerun()
+
+    st.markdown("---")
+
+    # Add task form
+    with st.form("add_task_form"):
+        c1, c2, c3 = st.columns([4, 2, 1])
+        with c1:
+            task_title = st.text_input("Task title", key="new_task_title")
+        with c2:
+            task_due = st.date_input("Due date", value=date.today(), key="new_task_due")
+        with c3:
+            task_region = st.selectbox("Region", st.session_state.task_regions, key="new_task_region")
+        added = st.form_submit_button("➕ Add task")
+        if added and task_title.strip():
+            st.session_state.task_id_counter = st.session_state.get("task_id_counter", 0) + 1
             st.session_state.tasks.append({
-                "title": title.strip(),
-                "due": str(due),
+                "id": st.session_state.task_id_counter,
+                "title": task_title.strip(),
+                "due": str(task_due),
                 "done": False,
+                "region": task_region,
             })
-            st.success("Task added!")
+            st.success("Task added.")
+            st.experimental_rerun()
 
-    st.markdown("### Your tasks")
+    st.markdown("---")
 
-    if not st.session_state.tasks:
-        st.info("No tasks yet. Add your first one above.")
+    # Board
+    regions = st.session_state.task_regions
+    if not regions:
+        st.info("No regions defined. Add a region to get started.")
     else:
-        for i, task in enumerate(st.session_state.tasks):
-            cols = st.columns([0.08, 0.62, 0.15, 0.15])
-            task["done"] = cols[0].checkbox(
-                "",
-                value=task.get("done", False),
-                key=f"done_{i}",
-            )
-            cols[1].write(task["title"])
-            cols[2].caption(f"📅 {task['due']}")
-            if cols[3].button("Delete", key=f"del_{i}"):
-                st.session_state.tasks.pop(i)
-                st.rerun()
+        cols = st.columns(len(regions))
+        for idx, region in enumerate(regions):
+            with cols[idx]:
+                st.subheader(region)
+                region_tasks = [t for t in st.session_state.tasks if t.get("region") == region]
+                if not region_tasks:
+                    st.info("No tasks here. Add one above.")
+                else:
+                    for t in list(region_tasks):
+                        st.markdown("---")
+                        st.markdown(f"**{t.get('title')}**")
+                        st.caption(f"Due: {t.get('due')}")
 
+                        # Done checkbox
+                        checked = st.checkbox("Done", value=t.get("done", False), key=f"done_{t['id']}")
+                        if checked != t.get("done", False):
+                            toggle_task_done(t["id"], checked)
+                            st.experimental_rerun()
+
+                        b1, b2, b3, b4 = st.columns([0.25, 0.25, 0.25, 0.25])
+                        if b1.button("◀", key=f"left_{t['id']}"):
+                            move_task_region(t["id"], -1)
+                            st.experimental_rerun()
+                        if b2.button("▶", key=f"right_{t['id']}"):
+                            move_task_region(t["id"], 1)
+                            st.experimental_rerun()
+                        if b3.button("🔼", key=f"up_{t['id']}"):
+                            reorder_task_in_region(t["id"], up=True)
+                            st.experimental_rerun()
+                        if b4.button("🔽", key=f"down_{t['id']}"):
+                            reorder_task_in_region(t["id"], up=False)
+                            st.experimental_rerun()
+
+                        e1, e2 = st.columns([3,1])
+                        if e2.button("🗑", key=f"del_{t['id']}"):
+                            st.session_state.tasks = [x for x in st.session_state.tasks if x.get("id") != t["id"]]
+                            st.experimental_rerun()
+
+                        # Edit inline
+                        if st.button("✏️ Edit", key=f"edit_{t['id']}"):
+                            st.session_state._edit_task = t['id']
+                            st.experimental_rerun()
+
+                        if st.session_state.get("_edit_task") == t['id']:
+                            with st.form(f"edit_form_{t['id']}"):
+                                new_title = st.text_input("Title", value=t['title'], key=f"edit_title_{t['id']}")
+                                new_due = st.date_input("Due", value=pd.to_datetime(t['due']).date(), key=f"edit_due_{t['id']}")
+                                new_region = st.selectbox("Region", st.session_state.task_regions, index=st.session_state.task_regions.index(t['region']) if t['region'] in st.session_state.task_regions else 0, key=f"edit_region_{t['id']}")
+                                save_edit = st.form_submit_button("Save")
+                                if save_edit:
+                                    for task in st.session_state.tasks:
+                                        if task.get('id') == t['id']:
+                                            task['title'] = new_title.strip()
+                                            task['due'] = str(new_due)
+                                            task['region'] = new_region
+                                    st.session_state._edit_task = None
+                                    st.experimental_rerun()
+
+# ---------------------------------------
+# Universities Tab
+# ---------------------------------------
+
+with tabs[3]:
+    st.header("Universities 🌍")
+    st.caption("Ищи университеты по названию или коду страны и сразу переходи на их сайт. Плюс — избранное и рандомный выбор.")
 
 # ---------------------------------------
 # Universities Tab
@@ -1262,26 +1567,7 @@ with tabs[4]:
             file_name="college_planner_export.json",
         )
 
-    uploaded = st.file_uploader(
-        "Import data JSON (profile/tasks/favorites/deadlines/notes)",
-        type=["json"],
-    )
-    if uploaded:
-        try:
-            data = json.load(uploaded)
-            if "profile" in data:
-                st.session_state.profile.update(data["profile"])
-            if "tasks" in data:
-                st.session_state.tasks = data["tasks"]
-            if "favorites" in data:
-                st.session_state.uni_favorites = data["favorites"]
-            if "deadlines" in data:
-                st.session_state.deadlines = data["deadlines"]
-            if "notes" in data:
-                st.session_state.uni_notes.update(data["notes"])
-            st.success("Imported data (merged).")
-        except Exception as e:
-            st.error("Import failed: " + str(e))
+    # JSON import removed (PDF-only workflow)
 
 # --- NEW: Preparation Tab (fixed with proper with/expander structure) ---
 with tabs[5]:
