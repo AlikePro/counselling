@@ -1098,7 +1098,7 @@ with tabs[1]:
 # ---------------------------------------
 # Tasks Tab
 # ---------------------------------------
-with tabs[1]:
+with tabs[2]:
     st.header("✅ Tasks")
 
     with st.form("task_form"):
@@ -1143,7 +1143,7 @@ with tabs[1]:
 # Universities Tab
 # ---------------------------------------
 
-with tabs[2]:
+with tabs[3]:
     st.header("Universities 🌍")
     st.caption("Ищи университеты по названию или коду страны и сразу переходи на их сайт. Плюс — избранное и рандомный выбор.")
 
@@ -1253,7 +1253,7 @@ with tabs[2]:
 # ---------------------------------------
 # Deadlines & Dashboard Tab
 # ---------------------------------------
-with tabs[3]:
+with tabs[4]:
     st.header("📅 Deadlines")
     st.caption("Track application, scholarship and other important dates.")
 
@@ -1378,7 +1378,7 @@ with tabs[3]:
             st.error("Import failed: " + str(e))
 
 # --- NEW: Preparation Tab (fixed with proper with/expander structure) ---
-with tabs[4]:
+with tabs[5]:
     st.header("📚 Preparation Materials")
     st.caption("Resources, guides and practice materials for popular exams. Раскрой секции для деталей.")
 
@@ -1569,7 +1569,7 @@ with tabs[4]:
 # ---------------------------------------
 # AI Advisor Tab
 # ---------------------------------------
-with tabs[5]:
+with tabs[6]:
     st.header("💡 AI Advisor — персональные советы")
     st.caption("Задай вопрос по профориентации, выбору вуза или подготовке к экзаменам.")
 
