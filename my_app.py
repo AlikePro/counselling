@@ -88,8 +88,7 @@ for t in st.session_state.tasks:
 # Global page config & header
 # ---------------------------------------
 st.set_page_config(
-    page_title="College Planner",
-    page_icon="🎓",
+    page_title="Orken+ College Planner",
     layout="wide",
 )
 
