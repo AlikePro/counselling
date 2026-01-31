@@ -8,9 +8,15 @@ import os
 import requests
 import socket
 import io
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.pagesizes import letter
+
+# ReportLab PDF support (optional)
+REPORTLAB_AVAILABLE = True
+try:
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.pagesizes import letter
+except Exception:
+    REPORTLAB_AVAILABLE = False
 
 # ---------------------------------------
 # Environment / constants
@@ -228,6 +234,8 @@ def groq_post_with_auth_variants_sync(api_url, key, body, timeout=50):
 
 def generate_export_pdf(export_payload: dict) -> bytes:
     """Generate a simple PDF (bytes) containing full export payload."""
+    if not REPORTLAB_AVAILABLE:
+        raise ImportError("reportlab is not installed. Install with 'pip install reportlab'")
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
     styles = getSampleStyleSheet()
@@ -1230,18 +1238,26 @@ with tabs[4]:
         "deadlines": st.session_state.deadlines,
         "notes": st.session_state.uni_notes,
     }
-    try:
-        pdf_bytes = generate_export_pdf(export_payload_full)
+    if REPORTLAB_AVAILABLE:
+        try:
+            pdf_bytes = generate_export_pdf(export_payload_full)
+            st.download_button(
+                "Export all data (profile, tasks, favorites, deadlines, notes) as PDF",
+                data=pdf_bytes,
+                file_name="college_planner_export.pdf",
+                mime="application/pdf",
+            )
+        except Exception as e:
+            st.error("PDF export failed: " + str(e))
+            st.download_button(
+                "Export all data (profile, tasks, favorites, deadlines, notes) (JSON fallback)",
+                data=json.dumps(export_payload_full, indent=2),
+                file_name="college_planner_export.json",
+            )
+    else:
+        st.warning("PDF export unavailable — 'reportlab' is not installed. Run `pip install reportlab` or add it to requirements.txt and redeploy.")
         st.download_button(
-            "Export all data (profile, tasks, favorites, deadlines, notes) as PDF",
-            data=pdf_bytes,
-            file_name="college_planner_export.pdf",
-            mime="application/pdf",
-        )
-    except Exception as e:
-        st.error("PDF export failed: " + str(e))
-        st.download_button(
-            "Export all data (profile, tasks, favorites, deadlines, notes) (JSON fallback)",
+            "Export all data (profile, tasks, favorites, deadlines, notes) (JSON)",
             data=json.dumps(export_payload_full, indent=2),
             file_name="college_planner_export.json",
         )
