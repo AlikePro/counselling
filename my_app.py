@@ -7,7 +7,6 @@ from pathlib import Path
 import os
 import requests
 import socket
-from streamlit_javascript import st_javascript
 
 # ---------------------------------------
 # Environment / constants
@@ -62,61 +61,62 @@ if "groq_api_url" not in st.session_state:
 # Language & Theme (auto-detect)
 # ---------------------------------------
 
-def normalize_lang(lang):
-    if not lang:
-        return "en"
-    if lang.startswith("ru"):
-        return "ru"
-    if lang.startswith("kk"):
-        return "kz"
-    return "en"
-
 if "lang" not in st.session_state:
-    browser_lang = st_javascript("navigator.language || navigator.userLanguage")
-    st.session_state.lang = normalize_lang(browser_lang)
+    st.session_state.lang = "en"
 
 if "theme" not in st.session_state:
-    browser_theme = st_javascript(
-        "window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'"
-    )
-    st.session_state.theme = browser_theme or "light"
+    st.session_state.theme = "light"
 
 
 def set_theme(theme):
     if theme == "dark":
         st.markdown("""
         <style>
-        body, .stApp {
-            background-color: #0e1117;
-            color: #fafafa;
-        }
+        html, body { background-color: #1a1a1a; color: #e8e8e8; }
+        .stApp { background-color: #1a1a1a; color: #e8e8e8; }
+        .stMarkdown, .stHeader, .stCaption, .stWrite, .st-bx { color: #e8e8e8 !important; }
+        h1, h2, h3, h4, h5, h6 { color: #ffffff !important; }
+        .stButton>button { background-color: #2d2d2d; color: #e8e8e8; border: 1px solid #444; }
+        .stButton>button:hover { background-color: #3a3a3a; }
+        .stSelectbox, .stTextInput, .stNumberInput { color: #e8e8e8; }
+        .stSidebar { background-color: #0f0f0f; }
+        .stTabs [role="tablist"] { border-color: #444; }
+        .stTabs [role="tab"] { color: #aaa; }
+        .stTabs [role="tab"][aria-selected="true"] { color: #fff; border-color: #fff; }
+        a { color: #64b5f6 !important; }
+        .st-cv { color: #999; }
         </style>
         """, unsafe_allow_html=True)
     else:
         st.markdown("""
         <style>
-        body, .stApp {
-            background-color: white;
-            color: black;
-        }
+        html, body { background-color: #ffffff; color: #1a1a1a; }
+        .stApp { background-color: #ffffff; color: #1a1a1a; }
+        .stMarkdown, .stHeader, .stCaption, .stWrite, .st-bx { color: #1a1a1a !important; }
+        h1, h2, h3, h4, h5, h6 { color: #000000 !important; }
+        .stButton>button { background-color: #f0f0f0; color: #1a1a1a; border: 1px solid #ddd; }
+        .stButton>button:hover { background-color: #e0e0e0; }
+        .stSelectbox, .stTextInput, .stNumberInput { color: #1a1a1a; }
+        .stSidebar { background-color: #f8f8f8; border-right: 1px solid #eee; }
+        .stTabs [role="tablist"] { border-color: #ddd; }
+        .stTabs [role="tab"] { color: #666; }
+        .stTabs [role="tab"][aria-selected="true"] { color: #000; border-color: #000; }
+        a { color: #0066cc !important; }
+        .st-cv { color: #666; }
         </style>
         """, unsafe_allow_html=True)
 
 set_theme(st.session_state.theme)
-translations = {
-    "en": {
-        "title": "College Planner",
-        "subtitle": "Track your profile, exams, universities, deadlines and chat with an AI advisor."
-    },
-    "ru": {
-        "title": "Планировщик поступления",
-        "subtitle": "Отслеживай профиль, экзамены, университеты и дедлайны с AI-помощником."
-    },
-    "kz": {
-        "title": "Университетке түсу жоспары",
-        "subtitle": "Профильді, емтихандарды, университеттер мен дедлайндарды бақылаңыз."
-    }
+
+# TRANSLATIONS DICT - DEFINE EARLY, BEFORE USE
+T = {
+    "en": {"title": "College Planner", "subtitle": "Track your profile, exams, universities, deadlines and chat with an AI advisor.", "language_label": "Language", "dark_mode_label": "🌙 Dark mode", "overview_header": "Overview", "gpa_label": "GPA", "intended_major_label": "Intended major", "data_header": "Data", "export_button": "⬇️ Export data (JSON)", "overview": "Overview", "tasks": "Tasks", "universities": "Universities", "career_test": "Career Test", "career_test_header": "🧭 Holland Career Orientation Test", "career_test_desc": "Discover your career type using Holland RIASEC. Answer 60 questions in 6 blocks.", "rating_prompt": "Rate each statement from 1 (Not me at all) to 5 (Very much me)", "prev_block": "← Previous Block", "next_block": "Next Block →", "complete_test": "🎯 Complete Test", "test_completed": "✅ Career test completed!", "holland_code_label": "Your Holland Code:", "riasec_scores": "Your RIASEC Scores:", "what_it_means": "What does this mean?", "retake_test": "🔄 Retake Test", "profile_header": "👤 Profile", "profile_desc": "We'll use this to estimate chances and personalize AI advice.", "academics": "Academics", "school_activities": "School & Activities", "school_label": "School", "awards_label": "Awards & activities", "extracurricular": "Extracurricular strength (0–5)", "save_profile": "💾 Save profile", "profile_saved": "Profile saved", "exams_title": "🧪 Exams & Scores", "exams_desc": "Manage test results and planned exam dates.", "choose_exams": "Choose exams to manage", "save_exams": "Save exams to profile", "exams_saved": "Exams saved to profile.", "exams_summary": "📊 Exams Summary", "tasks_header": "✅ Tasks", "task_placeholder": "Write motivation letter for ETH Zürich", "due_date": "Due date", "add_task": "➕ Add task", "task_added": "Task added!", "your_tasks": "Your tasks", "no_tasks": "No tasks yet. Add your first one above.", "delete": "Delete", "universities_header": "Universities 🌍", "universities_desc": "Search universities by name or country code. Add to favorites and get random picks.", "search_placeholder": "e.g. Harvard, Nazarbayev, Oxford", "country_code": "Country code (e.g. US, GB, KZ)", "random_uni": "🎲 Random university", "unis_found": "Universities found", "in_favorites": "In favorites", "no_results": "No results. Try changing query or country code.", "results": "Results", "open_website": "🌐 Open website", "add_favorite": "⭐ Add", "in_fav": "✅ In favorites", "favorites_header": "⭐ Favorites", "favorites_empty": "Empty. Add universities from the list above.", "remove": "🗑 Remove", "deadlines_header": "📅 Deadlines", "deadlines_desc": "Track application, scholarship and other important dates.", "add_deadline": "Add new deadline", "uni_name": "University name (type or paste)", "deadline_type": "Deadline type", "deadline_date": "Deadline date", "note_opt": "Note (optional)", "add_deadline_btn": "Add deadline", "deadline_added": "Deadline added!", "upcoming_90": "Upcoming deadlines (next 90 days)", "no_deadlines": "No deadlines yet. Add some above.", "days_left": "Days left", "progress_dash": "Progress Dashboard", "tasks_done": "Tasks done", "exams_taken": "Exams taken / planned", "favorites_snapshot": "Favorites snapshot", "no_fav": "No favorites yet.", "chances": "Estimated chances (favorites)", "no_fav_eval": "No favorites to evaluate.", "export_full": "Export all data (profile, tasks, favorites, deadlines, notes)", "import_label": "Import data JSON (profile/tasks/favorites/deadlines/notes)", "import_success": "Imported data (merged).", "import_failed": "Import failed:", "prep_header": "📚 Preparation Materials", "prep_desc": "Resources, guides and practice materials for popular exams.", "ai_header": "💡 AI Advisor — personalized advice", "ai_desc": "Ask questions about career, university choice or exam prep.", "profile_warning": "⚠️ Please fill out your profile in the 'Profile' tab first.", "your_profile": "📋 Your profile", "exams_passed": "Exams passed", "clear_history": "🔄 Clear history", "history_cleared": "History cleared.", "chat": "💬 Chat", "ask_question": "Ask a question...", "thinking": "🤖 Thinking...", "ai_error": "❌ Error requesting Groq:"},
+    "ru": {"title": "Планировщик поступления", "subtitle": "Профиль, экзамены, университеты, дедлайны и AI-консультант.", "language_label": "Язык", "dark_mode_label": "🌙 Тёмная тема", "overview_header": "Обзор", "gpa_label": "Средний балл", "intended_major_label": "Желаемая специальность", "data_header": "Данные", "export_button": "⬇️ Экспорт данных (JSON)", "overview": "Обзор", "tasks": "Задачи", "universities": "Университеты", "career_test": "Карьерный тест", "career_test_header": "🧭 Тест Холланда", "career_test_desc": "Узнай свой тип карьеры по RIASEC. Ответь на 60 вопросов в 6 блоках.", "rating_prompt": "Оцени каждое утверждение от 1 (совсем не обо мне) до 5 (полностью обо мне)", "prev_block": "← Пред. блок", "next_block": "След. блок →", "complete_test": "🎯 Завершить тест", "test_completed": "✅ Тест завершён!", "holland_code_label": "Ваш код Холланда:", "riasec_scores": "Ваши баллы RIASEC:", "what_it_means": "Что это значит?", "retake_test": "🔄 Пройти заново", "profile_header": "👤 Профиль", "profile_desc": "Для оценки шансов и персонализации советов AI.", "academics": "Учёба", "school_activities": "Школа и активности", "school_label": "Школа", "awards_label": "Награды и активности", "extracurricular": "Внеклассная деятельность (0–5)", "save_profile": "💾 Сохранить профиль", "profile_saved": "Профиль сохранён", "exams_title": "🧪 Экзамены и оценки", "exams_desc": "Управляй результатами тестов и датами экзаменов.", "choose_exams": "Выбери экзамены", "save_exams": "Сохранить экзамены", "exams_saved": "Экзамены сохранены.", "exams_summary": "📊 Итоги", "tasks_header": "✅ Задачи", "task_placeholder": "Написать мотивационное письмо", "due_date": "Срок", "add_task": "➕ Добавить", "task_added": "Добавлена!", "your_tasks": "Твои задачи", "no_tasks": "Нет задач.", "delete": "Удалить", "universities_header": "Университеты 🌍", "universities_desc": "Поиск и избранное", "search_placeholder": "Harvard, Nazarbayev", "country_code": "Код страны", "random_uni": "🎲 Случайный", "unis_found": "Найдено", "in_favorites": "В избранном", "no_results": "Нет результатов.", "results": "Результаты", "open_website": "🌐 Сайт", "add_favorite": "⭐ Добавить", "in_fav": "✅ В избранном", "favorites_header": "⭐ Избранное", "favorites_empty": "Пусто.", "remove": "🗑 Удалить", "deadlines_header": "📅 Дедлайны", "deadlines_desc": "Отслеживай даты подачи.", "add_deadline": "Добавить дедлайн", "uni_name": "Университет", "deadline_type": "Тип", "deadline_date": "Дата", "note_opt": "Примечание", "add_deadline_btn": "Добавить", "deadline_added": "Добавлен!", "upcoming_90": "Ближайшие (90 дней)", "no_deadlines": "Нет дедлайнов.", "days_left": "Дней", "progress_dash": "Прогресс", "tasks_done": "Задач", "exams_taken": "Экзаменов", "favorites_snapshot": "Избранное", "no_fav": "Нет.", "chances": "Шансы", "no_fav_eval": "Нет для оценки.", "export_full": "Экспортировать всё", "import_label": "Импортировать JSON", "import_success": "Импортировано.", "import_failed": "Ошибка:", "prep_header": "📚 Материалы", "prep_desc": "Ресурсы для экзаменов.", "ai_header": "💡 AI консультант", "ai_desc": "Спроси о карьере или вузе.", "profile_warning": "⚠️ Сначала заполни профиль.", "your_profile": "📋 Профиль", "exams_passed": "Сдано", "clear_history": "🔄 Очистить", "history_cleared": "Очищено.", "chat": "💬 Чат", "ask_question": "Вопрос…", "thinking": "🤖 Думаю...", "ai_error": "❌ Ошибка Groq:"},
+    "kz": {"title": "Оқу жоспары", "subtitle": "Профиль, емтихандар, университеттер және AI.", "language_label": "Тіл", "dark_mode_label": "🌙 Түнгі режим", "overview_header": "Шолу", "gpa_label": "GPA", "intended_major_label": "Мамандық", "data_header": "Деректер", "export_button": "⬇️ Экспорт", "overview": "Шолу", "tasks": "Тапсырмалар", "universities": "Университеттер", "career_test": "Мансап тесті", "career_test_header": "🧭 Holland тесті", "career_test_desc": "Мансап түрін табыңыз. 60 сұрақ, 6 блок.", "rating_prompt": "1-ден 5-ке дейін бағалаңыз", "prev_block": "← Өмірі", "next_block": "Келесі →", "complete_test": "🎯 Аяқтау", "test_completed": "✅ Аяқталды!", "holland_code_label": "Кодыңыз:", "riasec_scores": "Ұпайлар:", "what_it_means": "Өзі?", "retake_test": "🔄 Қайтақы", "profile_header": "👤 Профиль", "profile_desc": "Шансы үшін.", "academics": "Оқу", "school_activities": "Іс-әрекет", "school_label": "Мектеп", "awards_label": "Награды", "extracurricular": "Сыбайлас (0–5)", "save_profile": "💾 Сақтау", "profile_saved": "Сақталды", "exams_title": "🧪 Емтихандар", "exams_desc": "Нәтижелер", "choose_exams": "Таңдау", "save_exams": "Сақтау", "exams_saved": "Сақталды.", "exams_summary": "📊 Қорытынды", "tasks_header": "✅ Тапс", "task_placeholder": "Хат", "due_date": "Мерзімі", "add_task": "➕ Қосу", "task_added": "Қосылды!", "your_tasks": "Сенің", "no_tasks": "Жоқ", "delete": "Өшіру", "universities_header": "ВУЗ 🌍", "universities_desc": "Іздеу", "search_placeholder": "Harvard", "country_code": "Код", "random_uni": "🎲 Кездейсоқ", "unis_found": "Табылды", "in_favorites": "Таңдамалыда", "no_results": "Жоқ", "results": "Нәтиже", "open_website": "🌐 Сайт", "add_favorite": "⭐ Қосу", "in_fav": "✅ Таңдамалы", "favorites_header": "⭐ Таңдамалы", "favorites_empty": "Бос", "remove": "🗑 Өшіру", "deadlines_header": "📅 Мерзімі", "deadlines_desc": "Күндер", "add_deadline": "Қосу", "uni_name": "ВУЗ", "deadline_type": "Түрі", "deadline_date": "Күні", "note_opt": "Ескерт", "add_deadline_btn": "Қосу", "deadline_added": "Қосылды!", "upcoming_90": "Келесі (90)", "no_deadlines": "Жоқ", "days_left": "Күндер", "progress_dash": "Прогресс", "tasks_done": "Орындалды", "exams_taken": "Өтілді", "favorites_snapshot": "Таңдамалы", "no_fav": "Жоқ", "chances": "Мүмкіндіктер", "no_fav_eval": "Жоқ", "export_full": "Экспорт", "import_label": "Импорт", "import_success": "Импорттальды", "import_failed": "Қате:", "prep_header": "📚 Материалдар", "prep_desc": "Ресурстар", "ai_header": "💡 AI кеңесші", "ai_desc": "Сұра", "profile_warning": "⚠️ Профильді толтыр", "your_profile": "📋 Профиль", "exams_passed": "Өтілді", "clear_history": "🔄 Тазартау", "history_cleared": "Тазартылды", "chat": "💬 Чат", "ask_question": "Сұраңыз", "thinking": "🤖 Ойланып", "ai_error": "❌ Қате:"},
 }
+
+def t(key):
+    return T.get(st.session_state.lang, T["en"]).get(key, key)
 
 # ---------------------------------------
 # Global page config & header
@@ -129,10 +129,10 @@ st.set_page_config(
 lang = st.selectbox(
     "🌐 Language / Тіл / Язык",
     ["en", "ru", "kz"],
+    index=["en", "ru", "kz"].index(st.session_state.lang),
     format_func=lambda x: {"en": "English", "ru": "Русский", "kz": "Қазақша"}[x]
 )
-
-t = translations[lang]
+st.session_state.lang = lang
 
 with st.container():
     left, right = st.columns([1, 5])
@@ -143,9 +143,9 @@ with st.container():
     with right:
         st.markdown(
             f"""
-            # {t["title"]}
+            # {t("title")}
             <span style="font-size:14px;color:gray;">
-            {t["subtitle"]}
+            {t("subtitle")}
             </span>
             """,
             unsafe_allow_html=True,
@@ -157,28 +157,30 @@ st.write("")  # small spacing
 # ---------------------------------------
 with st.sidebar:
     st.markdown("### 🌐 Settings")
+    
 
     st.session_state.lang = st.selectbox(
-    "Language",
-    ["en", "ru", "kz"],
-    index=["en", "ru", "kz"].index(st.session_state.lang),
-)
+        t("language_label"),
+        ["en", "ru", "kz"],
+        index=["en", "ru", "kz"].index(st.session_state.lang),
+        format_func=lambda x: {"en": "English", "ru": "Русский", "kz": "Қазақша"}[x],
+    )
 
-    dark_mode = st.toggle(
-    "🌙 Dark mode",
-    value=st.session_state.theme == "dark",
-)
+    dark_mode = st.checkbox(
+        t("dark_mode_label"),
+        value=(st.session_state.theme == "dark"),
+    )
 
     st.session_state.theme = "dark" if dark_mode else "light"
     set_theme(st.session_state.theme)
 
     st.markdown("---")
 
-    st.markdown("### 📌 Overview")
+    st.markdown("### " + t("overview_header"))
 
     sidebar_profile = st.session_state.get("profile", {})
-    st.metric("GPA", sidebar_profile.get("gpa", "—"))
-    st.metric("Intended major", sidebar_profile.get("major", "—"))
+    st.metric(t("gpa_label"), sidebar_profile.get("gpa", "—"))
+    st.metric(t("intended_major_label"), sidebar_profile.get("major", "—"))
 
     total_tasks = len(st.session_state.get("tasks", []))
     done_tasks = sum(1 for t in st.session_state.get("tasks", []) if t.get("done"))
@@ -186,7 +188,7 @@ with st.sidebar:
     st.caption(f"Tasks: {done_tasks}/{total_tasks} done")
 
     st.markdown("---")
-    st.markdown("### ⚙️ Data")
+    st.markdown("### " + t("data_header"))
 
     # Always show a single download button (no extra click)
     export_payload = {
@@ -197,35 +199,145 @@ with st.sidebar:
         "notes": st.session_state.uni_notes,
     }
     st.download_button(
-        "⬇️ Export data (JSON)",
+        t("export_button"),
         data=json.dumps(export_payload, indent=2),
         file_name="college_planner_export.json",
     )
 
 T = {
     "en": {
-        "title": "College Planner",
-        "subtitle": "Track your profile, exams, universities, deadlines and chat with an AI advisor.",
-        "overview": "Overview",
-        "tasks": "Tasks",
-        "universities": "Universities",
-        "career_test": "Career Test",
+        "title": "College Planner", "subtitle": "Track your profile, exams, universities, deadlines and chat with an AI advisor.",
+        "language_label": "Language", "dark_mode_label": "🌙 Dark mode", "overview_header": "Overview",
+        "gpa_label": "GPA", "intended_major_label": "Intended major", "data_header": "Data",
+        "export_button": "⬇️ Export data (JSON)", "overview": "Overview", "tasks": "Tasks", "universities": "Universities",
+        "career_test": "Career Test", "career_test_header": "🧭 Holland Career Orientation Test",
+        "career_test_desc": "Discover your career type using Holland RIASEC. Answer 60 questions in 6 blocks.",
+        "rating_prompt": "Rate each statement from 1 (Not me at all) to 5 (Very much me)", "prev_block": "← Previous Block",
+        "next_block": "Next Block →", "complete_test": "🎯 Complete Test", "test_completed": "✅ Career test completed!",
+        "holland_code_label": "Your Holland Code:", "riasec_scores": "Your RIASEC Scores:", "what_it_means": "What does this mean?",
+        "retake_test": "🔄 Retake Test", "profile_header": "👤 Profile",
+        "profile_desc": "We'll use this to estimate chances and personalize AI advice.", "academics": "Academics",
+        "school_activities": "School & Activities", "school_label": "School", "awards_label": "Awards & activities",
+        "extracurricular": "Extracurricular strength (0–5)", "save_profile": "💾 Save profile", "profile_saved": "Profile saved",
+        "exams_title": "🧪 Exams & Scores", "exams_desc": "Manage test results and planned exam dates.",
+        "choose_exams": "Choose exams to manage", "save_exams": "Save exams to profile", "exams_saved": "Exams saved to profile.",
+        "exams_summary": "📊 Exams Summary", "tasks_header": "✅ Tasks", "task_placeholder": "Write motivation letter for ETH Zürich",
+        "due_date": "Due date", "add_task": "➕ Add task", "task_added": "Task added!", "your_tasks": "Your tasks",
+        "no_tasks": "No tasks yet. Add your first one above.", "delete": "Delete", "universities_header": "Universities 🌍",
+        "universities_desc": "Search universities by name or country code. Add to favorites and get random picks.",
+        "search_placeholder": "e.g. Harvard, Nazarbayev, Oxford", "country_code": "Country code (e.g. US, GB, KZ)",
+        "random_uni": "🎲 Random university", "unis_found": "Universities found", "in_favorites": "In favorites",
+        "no_results": "No results. Try changing query or country code.", "results": "Results", "open_website": "🌐 Open website",
+        "add_favorite": "⭐ Add", "in_fav": "✅ In favorites", "favorites_header": "⭐ Favorites",
+        "favorites_empty": "Empty. Add universities from the list above.", "remove": "🗑 Remove",
+        "deadlines_header": "📅 Deadlines", "deadlines_desc": "Track application, scholarship and other important dates.",
+        "add_deadline": "Add new deadline", "uni_name": "University name (type or paste)", "deadline_type": "Deadline type",
+        "deadline_date": "Deadline date", "note_opt": "Note (optional)", "add_deadline_btn": "Add deadline",
+        "deadline_added": "Deadline added!", "upcoming_90": "Upcoming deadlines (next 90 days)", "no_deadlines": "No deadlines yet. Add some above.",
+        "days_left": "Days left", "progress_dash": "Progress Dashboard", "tasks_done": "Tasks done",
+        "exams_taken": "Exams taken / planned", "favorites_snapshot": "Favorites snapshot", "no_fav": "No favorites yet.",
+        "chances": "Estimated chances (favorites)", "no_fav_eval": "No favorites to evaluate.",
+        "export_full": "Export all data (profile, tasks, favorites, deadlines, notes)",
+        "import_label": "Import data JSON (profile/tasks/favorites/deadlines/notes)", "import_success": "Imported data (merged).",
+        "import_failed": "Import failed:", "prep_header": "📚 Preparation Materials",
+        "prep_desc": "Resources, guides and practice materials for popular exams.",
+        "ai_header": "💡 AI Advisor — personalized advice", "ai_desc": "Ask questions about career, university choice or exam prep.",
+        "profile_warning": "⚠️ Please fill out your profile in the 'Profile' tab first.", "your_profile": "📋 Your profile",
+        "exams_passed": "Exams passed", "clear_history": "🔄 Clear history", "history_cleared": "History cleared.",
+        "chat": "💬 Chat", "ask_question": "Ask a question...", "thinking": "🤖 Thinking...",
+        "ai_error": "❌ Error requesting Groq:",
     },
     "ru": {
-        "title": "Планировщик поступления",
-        "subtitle": "Профиль, экзамены, университеты, дедлайны и AI-консультант.",
-        "overview": "Обзор",
-        "tasks": "Задачи",
-        "universities": "Университеты",
-        "career_test": "Карьерный тест",
+        "title": "Планировщик поступления", "subtitle": "Профиль, экзамены, университеты, дедлайны и AI-консультант.",
+        "language_label": "Язык", "dark_mode_label": "🌙 Тёмная тема", "overview_header": "Обзор",
+        "gpa_label": "Средний балл", "intended_major_label": "Желаемая специальность", "data_header": "Данные",
+        "export_button": "⬇️ Экспорт данных (JSON)", "overview": "Обзор", "tasks": "Задачи", "universities": "Университеты",
+        "career_test": "Карьерный тест", "career_test_header": "🧭 Тест-ориентации Холланда",
+        "career_test_desc": "Узнай свой тип карьеры по модели RIASEC. Ответь на 60 вопросов в 6 блоках.",
+        "rating_prompt": "Оцени каждое утверждение от 1 (совсем не обо мне) до 5 (полностью обо мне)",
+        "prev_block": "← Предыдущий блок", "next_block": "Следующий блок →", "complete_test": "🎯 Завершить тест",
+        "test_completed": "✅ Тест завершён!", "holland_code_label": "Ваш код Холланда:",
+        "riasec_scores": "Ваши баллы RIASEC:", "what_it_means": "Что это значит?", "retake_test": "🔄 Пройти тест заново",
+        "profile_header": "👤 Профиль", "profile_desc": "Мы используем это для оценки шансов и персонализации советов AI.",
+        "academics": "Учёба", "school_activities": "Школа и активности", "school_label": "Школа",
+        "awards_label": "Награды и активности", "extracurricular": "Уровень внеклассной деятельности (0–5)",
+        "save_profile": "💾 Сохранить профиль", "profile_saved": "Профиль сохранён",
+        "exams_title": "🧪 Экзамены и оценки", "exams_desc": "Управляй результатами тестов и запланированными датами экзаменов.",
+        "choose_exams": "Выбери экзамены для управления", "save_exams": "Сохранить экзамены в профиль",
+        "exams_saved": "Экзамены сохранены в профиль.", "exams_summary": "📊 Итоги экзаменов",
+        "tasks_header": "✅ Задачи", "task_placeholder": "Написать мотивационное письмо для ETH Zürich",
+        "due_date": "Срок выполнения", "add_task": "➕ Добавить задачу", "task_added": "Задача добавлена!",
+        "your_tasks": "Твои задачи", "no_tasks": "Нет задач. Добавь первую выше.", "delete": "Удалить",
+        "universities_header": "Университеты 🌍", "universities_desc": "Ищи университеты по названию или коду страны. Добавляй в избранное и получай случайные предложения.",
+        "search_placeholder": "напр. Harvard, Nazarbayev, Oxford", "country_code": "Код страны (напр. US, GB, KZ)",
+        "random_uni": "🎲 Случайный университет", "unis_found": "Найдено университетов", "in_favorites": "В избранном",
+        "no_results": "Нет результатов. Измени запрос или код страны.", "results": "Результаты",
+        "open_website": "🌐 Открыть сайт", "add_favorite": "⭐ Добавить", "in_fav": "✅ В избранном",
+        "favorites_header": "⭐ Избранное", "favorites_empty": "Пусто. Добавь университеты из списка выше.",
+        "remove": "🗑 Удалить", "deadlines_header": "📅 Дедлайны",
+        "deadlines_desc": "Отслеживай даты подачи, стипендий и другие важные сроки.",
+        "add_deadline": "Добавить новый дедлайн", "uni_name": "Название университета (введи или вставь)",
+        "deadline_type": "Тип дедлайна", "deadline_date": "Дата дедлайна", "note_opt": "Примечание (опционально)",
+        "add_deadline_btn": "Добавить дедлайн", "deadline_added": "Дедлайн добавлен!",
+        "upcoming_90": "Ближайшие дедлайны (90 дней)", "no_deadlines": "Нет дедлайнов. Добавь выше.",
+        "days_left": "Дней осталось", "progress_dash": "Панель прогресса", "tasks_done": "Задач выполнено",
+        "exams_taken": "Экзаменов сдано / запланировано", "favorites_snapshot": "Снимок избранного",
+        "no_fav": "Нет избранных университетов.", "chances": "Ориентировочные шансы (избранное)",
+        "no_fav_eval": "Нет избранных для оценки.", "export_full": "Экспортировать все данные (профиль, задачи, избранное, дедлайны, заметки)",
+        "import_label": "Импортировать JSON (профиль/задачи/избранное/дедлайны/заметки)", "import_success": "Данные импортированы (объединены).",
+        "import_failed": "Ошибка импорта:", "prep_header": "📚 Материалы подготовки",
+        "prep_desc": "Ресурсы, гайды и практические материалы для популярных экзаменов.",
+        "ai_header": "💡 AI-консультант — персональные советы", "ai_desc": "Задай вопрос о карьере, выборе вуза или подготовке к экзаменам.",
+        "profile_warning": "⚠️ Сначала заполни профиль в табе 'Профиль'.", "your_profile": "📋 Твой профиль",
+        "exams_passed": "Сданных экзаменов", "clear_history": "🔄 Очистить историю", "history_cleared": "История очищена.",
+        "chat": "💬 Чат", "ask_question": "Задай вопрос…", "thinking": "🤖 Думаю...",
+        "ai_error": "❌ Ошибка при запросе к Groq:",
     },
     "kz": {
-        "title": "Оқу жоспары",
-        "subtitle": "Профиль, емтихандар, университеттер және AI кеңесші.",
-        "overview": "Шолу",
-        "tasks": "Тапсырмалар",
-        "universities": "Университеттер",
-        "career_test": "Мансап тесті",
+        "title": "Оқу жоспары", "subtitle": "Профиль, емтихандар, университеттер және AI кеңесші.",
+        "language_label": "Тіл", "dark_mode_label": "🌙 Түнгі режим", "overview_header": "Шолу",
+        "gpa_label": "GPA", "intended_major_label": "Қалаған мамандық", "data_header": "Деректер",
+        "export_button": "⬇️ Деректерді экспорттау (JSON)", "overview": "Шолу", "tasks": "Тапсырмалар", "universities": "Университеттер",
+        "career_test": "Мансап тесті", "career_test_header": "🧭 Holland мансап бағдарлау тесті",
+        "career_test_desc": "Holland RIASEC моделі арқылы мансап түрін анықта. 60 сұраққа 6 блокта жауап бер.",
+        "rating_prompt": "Әрбір сөйлемді 1-ден (мен емес) 5-ке дейін (өте көп) бағала",
+        "prev_block": "← Алдыңғы блок", "next_block": "Келесі блок →", "complete_test": "🎯 Тестті аяқтау",
+        "test_completed": "✅ Тест аяқталды!", "holland_code_label": "Сіздің Holland коды:",
+        "riasec_scores": "Сіздің RIASEC ұпайлары:", "what_it_means": "Бұл нені білдіреді?", "retake_test": "🔄 Тестті қайта өтіңіз",
+        "profile_header": "👤 Профиль", "profile_desc": "Мынаны ықтималдықтау бағалау және AI кеңесі жеке өзгерту үшін пайдаланамыз.",
+        "academics": "Академиялық", "school_activities": "Мектеп және қызметтер", "school_label": "Мектеп",
+        "awards_label": "Награды және қызметтер", "extracurricular": "Сабақтан тысқары іс-әрекет деңгейі (0–5)",
+        "save_profile": "💾 Профильді сақтау", "profile_saved": "Профиль сақталды",
+        "exams_title": "🧪 Емтихандар және ұпайлар", "exams_desc": "Тест нәтижелері мен жоспарланған емтихан күндерін басқа.",
+        "choose_exams": "Басқару үшін емтихандарды таңдау", "save_exams": "Профильге емтихандарды сақтау",
+        "exams_saved": "Профильге емтихандар сақталды.", "exams_summary": "📊 Емтихандар қорытындысы",
+        "tasks_header": "✅ Тапсырмалар", "task_placeholder": "ETH Zürich үшін мотивациялық хат жазу",
+        "due_date": "Орындау мерзімі", "add_task": "➕ Тапсырма қосу", "task_added": "Тапсырма қосылды!",
+        "your_tasks": "Сіздің тапсырмалар", "no_tasks": "Тапсырма жоқ. Жоғарыда бірінші қосыңыз.", "delete": "Өшіру",
+        "universities_header": "Университеттер 🌍", "universities_desc": "Университеттерді атауы немесе мемлекет коды бойынша іздеңіз. Таңдамалыға қосыңыз және кездейсоқ таңдау алыңыз.",
+        "search_placeholder": "мыс. Harvard, Nazarbayev, Oxford", "country_code": "Мемлекет коды (мыс. US, GB, KZ)",
+        "random_uni": "🎲 Кездейсоқ университет", "unis_found": "Табылған университеттер", "in_favorites": "Таңдамалыда",
+        "no_results": "Нәтиже жоқ. Сұрау немесе мемлекет кодын өзгертіңіз.", "results": "Нәтижелер",
+        "open_website": "🌐 Веб-сайтты ашу", "add_favorite": "⭐ Қосу", "in_fav": "✅ Таңдамалыда",
+        "favorites_header": "⭐ Таңдамалы", "favorites_empty": "Бос. Жоғарыдан университеттер қосыңыз.",
+        "remove": "🗑 Өшіру", "deadlines_header": "📅 Дедлайндар",
+        "deadlines_desc": "Өтіну, стипендия және басқа маңызды күндерін бақылаңыз.",
+        "add_deadline": "Жаңа дедлайн қосу", "uni_name": "Университет атты (теңшеу немесе құю)",
+        "deadline_type": "Дедлайн түрі", "deadline_date": "Дедлайн күні", "note_opt": "Ескертпе (опционал)",
+        "add_deadline_btn": "Дедлайн қосу", "deadline_added": "Дедлайн қосылды!",
+        "upcoming_90": "Келесі дедлайндар (90 күн)", "no_deadlines": "Дедлайн жоқ. Жоғарыда қосыңыз.",
+        "days_left": "Күндер қалды", "progress_dash": "Прогресс тақтасы", "tasks_done": "Орындалған тапсырмалар",
+        "exams_taken": "Өтілген / жоспарланған емтихандар", "favorites_snapshot": "Таңдамалы түсінік",
+        "no_fav": "Таңдамалы университеттер жоқ.", "chances": "Ықтимал мүмкіндіктер (таңдамалы)",
+        "no_fav_eval": "Бағалау үшін таңдамалы жоқ.", "export_full": "Барлық деректерді экспорттау (профиль, тапсырмалар, таңдамалы, дедлайндар, ескертпелер)",
+        "import_label": "JSON импорттау (профиль/тапсырмалар/таңдамалы/дедлайндар/ескертпелер)", "import_success": "Деректер импорттальды (біріктірілді).",
+        "import_failed": "Импорт сәтсіз:", "prep_header": "📚 Дайындау материалдары",
+        "prep_desc": "Танымал емтихандар үшін ресурстар, нұсқаулықтар және практикалық материалдары.",
+        "ai_header": "💡 AI кеңесші — жеке кеңес", "ai_desc": "Мансап, университет таңдау немесе емтихан дайындығы туралы сұрақ қойыңыз.",
+        "profile_warning": "⚠️ Алдымен 'Профиль' табында профильді толтырыңыз.", "your_profile": "📋 Сіздің профиліңіз",
+        "exams_passed": "Өтілген емтихандар", "clear_history": "🔄 Тарихты тазартау", "history_cleared": "Тарихы тазартылды.",
+        "chat": "💬 Чат", "ask_question": "Сұрақ қойыңыз…", "thinking": "🤖 Ойланып жатыр...",
+        "ai_error": "❌ Groq сұрау қатесі:",
     },
 }
 
