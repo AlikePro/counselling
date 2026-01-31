@@ -1220,7 +1220,7 @@ with tabs[2]:
             if nr and nr not in st.session_state.task_regions:
                 st.session_state.task_regions.append(nr)
                 st.success(f"Region '{nr}' added.")
-                st.experimental_rerun()
+                st.rerun()
 
     rem_region = st.selectbox("Remove region", [""] + st.session_state.task_regions, key="remove_region_select")
     if rem_region:
@@ -1843,3 +1843,4 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
