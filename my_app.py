@@ -1233,7 +1233,7 @@ with tabs[2]:
                         t["region"] = target
                 st.session_state.task_regions.remove(rem_region)
                 st.success(f"Region '{rem_region}' removed.")
-                st.experimental_rerun()
+                st.rerun()
 
     st.markdown("---")
 
@@ -1257,7 +1257,7 @@ with tabs[2]:
                 "region": task_region,
             })
             st.success("Task added.")
-            st.experimental_rerun()
+            st.rerun()
 
     st.markdown("---")
 
@@ -1283,31 +1283,31 @@ with tabs[2]:
                         checked = st.checkbox("Done", value=t.get("done", False), key=f"done_{t['id']}")
                         if checked != t.get("done", False):
                             toggle_task_done(t["id"], checked)
-                            st.experimental_rerun()
+                            st.rerun()
 
                         b1, b2, b3, b4 = st.columns([0.25, 0.25, 0.25, 0.25])
                         if b1.button("◀", key=f"left_{t['id']}"):
                             move_task_region(t["id"], -1)
-                            st.experimental_rerun()
+                            st.rerun()
                         if b2.button("▶", key=f"right_{t['id']}"):
                             move_task_region(t["id"], 1)
-                            st.experimental_rerun()
+                            st.rerun()
                         if b3.button("🔼", key=f"up_{t['id']}"):
                             reorder_task_in_region(t["id"], up=True)
-                            st.experimental_rerun()
+                            st.rerun()
                         if b4.button("🔽", key=f"down_{t['id']}"):
                             reorder_task_in_region(t["id"], up=False)
-                            st.experimental_rerun()
+                            st.rerun()
 
                         e1, e2 = st.columns([3,1])
                         if e2.button("🗑", key=f"del_{t['id']}"):
                             st.session_state.tasks = [x for x in st.session_state.tasks if x.get("id") != t["id"]]
-                            st.experimental_rerun()
+                            st.rerun()
 
                         # Edit inline
                         if st.button("✏️ Edit", key=f"edit_{t['id']}"):
                             st.session_state._edit_task = t['id']
-                            st.experimental_rerun()
+                            st.rerun()
 
                         if st.session_state.get("_edit_task") == t['id']:
                             with st.form(f"edit_form_{t['id']}"):
@@ -1322,7 +1322,7 @@ with tabs[2]:
                                             task['due'] = str(new_due)
                                             task['region'] = new_region
                                     st.session_state._edit_task = None
-                                    st.experimental_rerun()
+                                    st.rerun()
 
 # ---------------------------------------
 # Universities Tab
@@ -1843,4 +1843,3 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
-
