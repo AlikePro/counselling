@@ -7,6 +7,7 @@ from pathlib import Path
 import os
 import requests
 import socket
+from streamlit_javascript import st_javascript
 
 # ---------------------------------------
 # Environment / constants
@@ -58,6 +59,66 @@ if "groq_api_url" not in st.session_state:
     st.session_state["groq_api_url"] = GROQ_API_URL
 
 # ---------------------------------------
+# Language & Theme (auto-detect)
+# ---------------------------------------
+
+def normalize_lang(lang):
+    if not lang:
+        return "en"
+    if lang.startswith("ru"):
+        return "ru"
+    if lang.startswith("kk"):
+        return "kz"
+    return "en"
+
+if "lang" not in st.session_state:
+    browser_lang = st_javascript("navigator.language || navigator.userLanguage")
+    st.session_state.lang = normalize_lang(browser_lang)
+
+if "theme" not in st.session_state:
+    browser_theme = st_javascript(
+        "window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'"
+    )
+    st.session_state.theme = browser_theme or "light"
+
+
+def set_theme(theme):
+    if theme == "dark":
+        st.markdown("""
+        <style>
+        body, .stApp {
+            background-color: #0e1117;
+            color: #fafafa;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <style>
+        body, .stApp {
+            background-color: white;
+            color: black;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+set_theme(st.session_state.theme)
+translations = {
+    "en": {
+        "title": "College Planner",
+        "subtitle": "Track your profile, exams, universities, deadlines and chat with an AI advisor."
+    },
+    "ru": {
+        "title": "Планировщик поступления",
+        "subtitle": "Отслеживай профиль, экзамены, университеты и дедлайны с AI-помощником."
+    },
+    "kz": {
+        "title": "Университетке түсу жоспары",
+        "subtitle": "Профильді, емтихандарды, университеттер мен дедлайндарды бақылаңыз."
+    }
+}
+
+# ---------------------------------------
 # Global page config & header
 # ---------------------------------------
 st.set_page_config(
@@ -65,17 +126,26 @@ st.set_page_config(
     page_icon="🎓",
     layout="wide",
 )
+lang = st.selectbox(
+    "🌐 Language / Тіл / Язык",
+    ["en", "ru", "kz"],
+    format_func=lambda x: {"en": "English", "ru": "Русский", "kz": "Қазақша"}[x]
+)
+
+t = translations[lang]
 
 with st.container():
     left, right = st.columns([1, 5])
+
     with left:
         st.markdown("## 🎓")
+
     with right:
         st.markdown(
-            """
-            # College Planner  
+            f"""
+            # {t["title"]}
             <span style="font-size:14px;color:gray;">
-            Track your profile, exams, universities, deadlines and chat with an AI advisor.
+            {t["subtitle"]}
             </span>
             """,
             unsafe_allow_html=True,
@@ -86,6 +156,24 @@ st.write("")  # small spacing
 # Sidebar overview
 # ---------------------------------------
 with st.sidebar:
+    st.markdown("### 🌐 Settings")
+
+    st.session_state.lang = st.selectbox(
+    "Language",
+    ["en", "ru", "kz"],
+    index=["en", "ru", "kz"].index(st.session_state.lang),
+)
+
+    dark_mode = st.toggle(
+    "🌙 Dark mode",
+    value=st.session_state.theme == "dark",
+)
+
+    st.session_state.theme = "dark" if dark_mode else "light"
+    set_theme(st.session_state.theme)
+
+    st.markdown("---")
+
     st.markdown("### 📌 Overview")
 
     sidebar_profile = st.session_state.get("profile", {})
@@ -113,6 +201,36 @@ with st.sidebar:
         data=json.dumps(export_payload, indent=2),
         file_name="college_planner_export.json",
     )
+
+T = {
+    "en": {
+        "title": "College Planner",
+        "subtitle": "Track your profile, exams, universities, deadlines and chat with an AI advisor.",
+        "overview": "Overview",
+        "tasks": "Tasks",
+        "universities": "Universities",
+        "career_test": "Career Test",
+    },
+    "ru": {
+        "title": "Планировщик поступления",
+        "subtitle": "Профиль, экзамены, университеты, дедлайны и AI-консультант.",
+        "overview": "Обзор",
+        "tasks": "Задачи",
+        "universities": "Университеты",
+        "career_test": "Карьерный тест",
+    },
+    "kz": {
+        "title": "Оқу жоспары",
+        "subtitle": "Профиль, емтихандар, университеттер және AI кеңесші.",
+        "overview": "Шолу",
+        "tasks": "Тапсырмалар",
+        "universities": "Университеттер",
+        "career_test": "Мансап тесті",
+    },
+}
+
+def t(key):
+    return T.get(st.session_state.lang, T["en"]).get(key, key)
 
 # ---------------------------------------
 # Utility functions
@@ -180,47 +298,6 @@ def _groq_post_with_auth_variants(api_url, key, body, timeout=50):
         except Exception:
             return r.status_code, r.text, None
     return last_status, last_text, None
-
-
-def groq_post_with_auth_variants_sync(api_url, key, body, timeout=50):
-    """Sync version of auth-variant POST for GROQ. Returns (status, text, parsed_json_or_None)."""
-    variants = [
-        {"Authorization": f"Bearer {key}"},
-        {"X-API-Key": key},
-        {"Cookie": f"session={key}"},
-        {"X-API-Key": key, "Cookie": f"session={key}"},
-        {"Authorization": f"Bearer {key}", "Cookie": f"session={key}"},
-    ]
-    last_status = None
-    last_text = None
-    for hdrs in variants:
-        headers = hdrs.copy()
-        headers.setdefault("Content-Type", "application/json")
-        try:
-            r = requests.post(api_url, headers=headers, json=body, timeout=timeout)
-        except Exception as e:
-            cause = getattr(e, "__cause__", None)
-            txt = str(e)
-            if isinstance(cause, socket.gaierror) or "getaddrinfo" in txt.lower():
-                return None, f"Network/DNS error: {txt}", None
-            last_status = None
-            last_text = f"Request error: {txt}"
-            continue
-        last_status = r.status_code
-        last_text = r.text or ""
-        if r.status_code == 200:
-            try:
-                return 200, r.text, r.json()
-            except Exception:
-                return 200, r.text, None
-        if r.status_code == 401:
-            continue
-        try:
-            return r.status_code, r.text, r.json()
-        except Exception:
-            return r.status_code, r.text, None
-    return last_status, last_text, None
-
 
 async def get_ai_advice(profile: dict) -> str:
     """Call LLM provider (GROQ) for personalized advice."""
