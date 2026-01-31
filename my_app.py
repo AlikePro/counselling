@@ -221,7 +221,41 @@ with st.container():
             """,
             unsafe_allow_html=True,
         )
-st.write("")  # small spacing
+st.markdown(
+    """
+    <style>
+    .cp-card { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .cp-card .cp-title { font-weight:700; font-size:16px; margin-bottom:6px; }
+    .cp-card .cp-sub { color:#666; font-size:13px }
+
+    .cp-task-card { background: #ffffff; border-radius: 10px; padding:10px; margin-bottom:10px; border:1px solid #eee }
+    .cp-task-done { background: #e9fff0 }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Small spacing
+st.write("")
+
+
+def render_card(title: str, body_html: str = "", color: str = "#fff"):
+    """Render a simple HTML card."""
+    html = f"""
+    <div class='cp-card' style='background: {color};'>
+      <div class='cp-title'>{title}</div>
+      <div class='cp-sub'>{body_html}</div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_metric_card(title: str, value: str, note: str = "", color: str = "#fff"):
+    body = f"<div style='font-size:20px;font-weight:700'>{value}</div>"
+    if note:
+        body += f"<div style='color:#666;font-size:12px'>{note}</div>"
+    render_card(title, body, color)
+
 
 # ---------------------------------------
 # Sidebar overview
@@ -1070,6 +1104,23 @@ with tabs[1]:
     st.header("👤 Profile")
     st.caption("We'll use this to estimate chances and personalize AI advice.")
 
+    # Top metrics as cards
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        render_metric_card("GPA", st.session_state.profile.get("gpa", "—"), "Current GPA")
+    with c2:
+        render_metric_card("Intended major", st.session_state.profile.get("major", "—"), "Your target major")
+    with c3:
+        render_metric_card("School", st.session_state.profile.get("school", "—"), "School name")
+
+    # Honors / Activities card
+    awards = st.session_state.profile.get("awards", [])
+    if awards:
+        awards_html = "".join([f"<div>{i+1}. {a}</div>" for i, a in enumerate(awards)])
+    else:
+        awards_html = "No honors or activities listed."
+    render_card("Honors & Activities", awards_html)
+
     with st.form("profile_form"):
         col1, col2 = st.columns(2)
 
@@ -1279,8 +1330,15 @@ with tabs[2]:
                 else:
                     for t in list(region_tasks):
                         st.markdown("---")
-                        st.markdown(f"**{t.get('title')}**")
-                        st.caption(f"Due: {t.get('due')}")
+                        # Card-like title
+                        card_cls = 'cp-task-card cp-task-done' if t.get('done') else 'cp-task-card'
+                        st.markdown(
+                            f"<div class=\"{card_cls}\">"
+                            f"<div style='font-weight:700'>{t.get('title')}</div>"
+                            f"<div style='color:#666;font-size:13px'>Due: {t.get('due')}</div>"
+                            f"</div>",
+                            unsafe_allow_html=True,
+                        )
 
                         # Done checkbox
                         checked = st.checkbox("Done", value=t.get("done", False), key=f"done_{t['id']}")
@@ -1348,27 +1406,25 @@ with tabs[3]:
     if recs:
         st.markdown("### 🔥 Recommended for you")
         for r in recs:
-            rc1, rc2 = st.columns([4,1])
-            with rc1:
-                name = r.get("name")
-                url = r.get("url", "")
-                country = r.get("country_code", "")
-                reason = r.get("reason", "")
-                if url:
-                    st.markdown(f"**[{name}]({url})** — {country}")
-                else:
-                    st.markdown(f"**{name}** — {country}")
-                if reason:
-                    st.caption(reason)
-            with rc2:
-                if st.button("⭐ Add", key=f"rec_add_{name}"):
-                    if not any(fav.get("name") == name and fav.get("url") == url for fav in st.session_state.uni_favorites):
-                        st.session_state.uni_favorites.append({"name": name, "url": url, "country_code": country})
-                        st.success(f"Added {name} to favorites")
-                        st.experimental_rerun()
+            name = r.get("name")
+            url = r.get("url", "")
+            country = r.get("country_code", "")
+            reason = r.get("reason", "")
+            body = ""
+            if url:
+                body += f"<a href='{url}' target='_blank'>{url}</a><br>"
+            if reason:
+                body += f"<div style='color:#666;font-size:13px'>{reason}</div>"
+            render_card(f"{name} {('— ' + country) if country else ''}", body)
+            if st.button("⭐ Add", key=f"rec_add_{name}"):
+                if not any(fav.get("name") == name and fav.get("url") == url for fav in st.session_state.uni_favorites):
+                    st.session_state.uni_favorites.append({"name": name, "url": url, "country_code": country})
+                    st.success(f"Added {name} to favorites")
+                    st.rerun()
         if st.button("Clear recommendations", key="clear_ai_recs"):
             st.session_state.ai_recommended_unis = []
-            st.experimental_rerun()
+            st.rerun()
+            st.rerun()
 
     if universities_df is None:
         st.error("Файл world-universities.csv не найден. Положи его рядом с этим скриптом и перезапусти приложение.")
@@ -1434,11 +1490,14 @@ with tabs[3]:
                 c1, c2, c3 = st.columns([4, 2, 1])
 
                 with c1:
-                    st.markdown(f"**{row['name']}**")
-                    st.markdown(f"[🌐 Open website]({row['url']})")
+                    name = row['name']
+                    url = row['url']
+                    country = row.get('country_code', '')
+                    body = f"<a href='{url}' target='_blank'>🌐 Open website</a><div style='color:#666;font-size:13px'>Country: {country}</div>"
+                    render_card(name, body)
 
                 with c2:
-                    st.caption(f"Country code: {row['country_code']}")
+                    st.write("")
 
                 with c3:
                     is_fav = any(
@@ -1464,9 +1523,8 @@ with tabs[3]:
             for i, uni in enumerate(st.session_state.uni_favorites):
                 fc1, fc2 = st.columns([4, 1])
                 with fc1:
-                    st.markdown(
-                        f"- [{uni['name']}]({uni['url']}) ({uni['country_code']})"
-                    )
+                    body = f"<a href='{uni.get('url','')}' target='_blank'>{uni.get('url','')}</a><div style='color:#666;font-size:13px'>{uni.get('country_code','')}</div>"
+                    render_card(uni.get('name',''), body)
                 with fc2:
                     if st.button("🗑 Remove", key=f"fav_del_{i}"):
                         st.session_state.uni_favorites.pop(i)
@@ -1517,9 +1575,10 @@ with tabs[4]:
                 days_left = (row["date_dt"].date() - date.today()).days
                 c1, c2, c3 = st.columns([3, 1, 1])
                 with c1:
-                    st.write(f"**{row['uni']}** — {row['type']} — {row['date']}")
-                    if row.get("note"):
-                        st.caption(row.get("note"))
+                    body = f"Date: {row.get('date','')}"
+                    if row.get('note'):
+                        body += f"<div style='color:#666;font-size:13px'>{row.get('note')}</div>"
+                    render_card(f"{row.get('uni','')} — {row.get('type','')}", body)
                 with c2:
                     st.metric("Days left", days_left)
                 with c3:
@@ -1596,9 +1655,11 @@ with tabs[5]:
 
     def render_resource_group(title, items):
         if items:
-            st.markdown(f"**{title}:**")
+            body = "<ul>"
             for it in items:
-                st.markdown(f"- {it}")
+                body += f"<li>{it}</li>"
+            body += "</ul>"
+            render_card(title, body)
 
     # SAT tab
     with prep_tabs[0]:
@@ -1657,8 +1718,14 @@ with tabs[5]:
 
             if st.session_state.prep_user_resources["SAT"]:
                 st.markdown("**Your SAT resources:**")
-                for r in st.session_state.prep_user_resources["SAT"]:
-                    st.markdown(f"- {r}")
+                for idx, r in enumerate(st.session_state.prep_user_resources["SAT"]):
+                    c1, c2 = st.columns([11, 1])
+                    with c1:
+                        render_card("", r)
+                    with c2:
+                        if st.button("🗑", key=f"prep_sat_del_{idx}"):
+                            st.session_state.prep_user_resources["SAT"].pop(idx)
+                            st.rerun()
 
     # IELTS tab
     with prep_tabs[1]:
@@ -1696,8 +1763,14 @@ with tabs[5]:
                     st.warning("Введите URL или описание ресурса.")
             if st.session_state.prep_user_resources["IELTS"]:
                 st.markdown("**Your IELTS resources:**")
-                for r in st.session_state.prep_user_resources["IELTS"]:
-                    st.markdown(f"- {r}")
+                for idx, r in enumerate(st.session_state.prep_user_resources["IELTS"]):
+                    c1, c2 = st.columns([11, 1])
+                    with c1:
+                        render_card("", r)
+                    with c2:
+                        if st.button("🗑", key=f"prep_ielts_del_{idx}"):
+                            st.session_state.prep_user_resources["IELTS"].pop(idx)
+                            st.rerun()
 
     # TOEFL tab
     with prep_tabs[2]:
@@ -1733,8 +1806,14 @@ with tabs[5]:
                     st.warning("Введите URL или описание ресурса.")
             if st.session_state.prep_user_resources["TOEFL"]:
                 st.markdown("**Your TOEFL resources:**")
-                for r in st.session_state.prep_user_resources["TOEFL"]:
-                    st.markdown(f"- {r}")
+                for idx, r in enumerate(st.session_state.prep_user_resources["TOEFL"]):
+                    c1, c2 = st.columns([11, 1])
+                    with c1:
+                        render_card("", r)
+                    with c2:
+                        if st.button("🗑", key=f"prep_toefl_del_{idx}"):
+                            st.session_state.prep_user_resources["TOEFL"].pop(idx)
+                            st.rerun()
 
     # ACT tab
     with prep_tabs[3]:
@@ -1769,8 +1848,14 @@ with tabs[5]:
                     st.warning("Введите URL или описание ресурса.")
             if st.session_state.prep_user_resources["ACT"]:
                 st.markdown("**Your ACT resources:**")
-                for r in st.session_state.prep_user_resources["ACT"]:
-                    st.markdown(f"- {r}")
+                for idx, r in enumerate(st.session_state.prep_user_resources["ACT"]):
+                    c1, c2 = st.columns([11, 1])
+                    with c1:
+                        render_card("", r)
+                    with c2:
+                        if st.button("🗑", key=f"prep_act_del_{idx}"):
+                            st.session_state.prep_user_resources["ACT"].pop(idx)
+                            st.rerun()
 
 # ---------------------------------------
 # AI Advisor Tab
@@ -1791,13 +1876,13 @@ with tabs[6]:
 
     with col_info:
         st.markdown("### 📋 Твой профиль")
-        st.metric("GPA", profile.get("gpa", "—"))
-        st.metric("Специальность", profile.get("major", "—"))
-        st.metric("Активности (0–5)", profile.get("extras_level", "—"))
+        render_metric_card("GPA", profile.get("gpa", "—"))
+        render_metric_card("Специальность", profile.get("major", "—"))
+        render_metric_card("Активности (0–5)", profile.get("extras_level", "—"))
 
         exams = profile.get("exams", {})
         passed = len([x for x in exams.values() if x.get("status") == "Already taken"])
-        st.metric("Сдано экзаменов", passed)
+        render_metric_card("Сдано экзаменов", passed)
 
         if st.button("🔄 Очистить историю"):
             st.session_state.ai_messages = []
