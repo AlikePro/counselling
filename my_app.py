@@ -70,10 +70,6 @@ if "selected_uni" not in st.session_state:
 if "ai_messages" not in st.session_state:
     st.session_state.ai_messages = []
 
-# AI recommendations (list of dicts: name, country_code, url, reason)
-if "ai_recommended_unis" not in st.session_state:
-    st.session_state.ai_recommended_unis = []
-
 if "use_offline_ai" not in st.session_state:
     st.session_state["use_offline_ai"] = False
 
@@ -221,41 +217,7 @@ with st.container():
             """,
             unsafe_allow_html=True,
         )
-st.markdown(
-    """
-    <style>
-    .cp-card { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .cp-card .cp-title { font-weight:700; font-size:16px; margin-bottom:6px; }
-    .cp-card .cp-sub { color:#666; font-size:13px }
-
-    .cp-task-card { background: #ffffff; border-radius: 10px; padding:10px; margin-bottom:10px; border:1px solid #eee }
-    .cp-task-done { background: #e9fff0 }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Small spacing
-st.write("")
-
-
-def render_card(title: str, body_html: str = "", color: str = "#fff"):
-    """Render a simple HTML card."""
-    html = f"""
-    <div class='cp-card' style='background: {color};'>
-      <div class='cp-title'>{title}</div>
-      <div class='cp-sub'>{body_html}</div>
-    </div>
-    """
-    st.markdown(html, unsafe_allow_html=True)
-
-
-def render_metric_card(title: str, value: str, note: str = "", color: str = "#fff"):
-    body = f"<div style='font-size:20px;font-weight:700'>{value}</div>"
-    if note:
-        body += f"<div style='color:#666;font-size:12px'>{note}</div>"
-    render_card(title, body, color)
-
+st.write("")  # small spacing
 
 # ---------------------------------------
 # Sidebar overview
@@ -1104,23 +1066,6 @@ with tabs[1]:
     st.header("👤 Profile")
     st.caption("We'll use this to estimate chances and personalize AI advice.")
 
-    # Top metrics as cards
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        render_metric_card("GPA", st.session_state.profile.get("gpa", "—"), "Current GPA")
-    with c2:
-        render_metric_card("Intended major", st.session_state.profile.get("major", "—"), "Your target major")
-    with c3:
-        render_metric_card("School", st.session_state.profile.get("school", "—"), "School name")
-
-    # Honors / Activities card
-    awards = st.session_state.profile.get("awards", [])
-    if awards:
-        awards_html = "".join([f"<div>{i+1}. {a}</div>" for i, a in enumerate(awards)])
-    else:
-        awards_html = "No honors or activities listed."
-    render_card("Honors & Activities", awards_html)
-
     with st.form("profile_form"):
         col1, col2 = st.columns(2)
 
@@ -1330,15 +1275,8 @@ with tabs[2]:
                 else:
                     for t in list(region_tasks):
                         st.markdown("---")
-                        # Card-like title
-                        card_cls = 'cp-task-card cp-task-done' if t.get('done') else 'cp-task-card'
-                        st.markdown(
-                            f"<div class=\"{card_cls}\">"
-                            f"<div style='font-weight:700'>{t.get('title')}</div>"
-                            f"<div style='color:#666;font-size:13px'>Due: {t.get('due')}</div>"
-                            f"</div>",
-                            unsafe_allow_html=True,
-                        )
+                        st.markdown(f"**{t.get('title')}**")
+                        st.caption(f"Due: {t.get('due')}")
 
                         # Done checkbox
                         checked = st.checkbox("Done", value=t.get("done", False), key=f"done_{t['id']}")
@@ -1400,31 +1338,6 @@ with tabs[3]:
 with tabs[3]:
     st.header("Universities 🌍")
     st.caption("Ищи университеты по названию или коду страны и сразу переходи на их сайт. Плюс — избранное и рандомный выбор.")
-
-    # ---- Recommended by AI ----
-    recs = st.session_state.get("ai_recommended_unis", [])
-    if recs:
-        st.markdown("### 🔥 Recommended for you")
-        for r in recs:
-            name = r.get("name")
-            url = r.get("url", "")
-            country = r.get("country_code", "")
-            reason = r.get("reason", "")
-            body = ""
-            if url:
-                body += f"<a href='{url}' target='_blank'>{url}</a><br>"
-            if reason:
-                body += f"<div style='color:#666;font-size:13px'>{reason}</div>"
-            render_card(f"{name} {('— ' + country) if country else ''}", body)
-            if st.button("⭐ Add", key=f"rec_add_{name}"):
-                if not any(fav.get("name") == name and fav.get("url") == url for fav in st.session_state.uni_favorites):
-                    st.session_state.uni_favorites.append({"name": name, "url": url, "country_code": country})
-                    st.success(f"Added {name} to favorites")
-                    st.rerun()
-        if st.button("Clear recommendations", key="clear_ai_recs"):
-            st.session_state.ai_recommended_unis = []
-            st.rerun()
-            st.rerun()
 
     if universities_df is None:
         st.error("Файл world-universities.csv не найден. Положи его рядом с этим скриптом и перезапусти приложение.")
@@ -1490,14 +1403,11 @@ with tabs[3]:
                 c1, c2, c3 = st.columns([4, 2, 1])
 
                 with c1:
-                    name = row['name']
-                    url = row['url']
-                    country = row.get('country_code', '')
-                    body = f"<a href='{url}' target='_blank'>🌐 Open website</a><div style='color:#666;font-size:13px'>Country: {country}</div>"
-                    render_card(name, body)
+                    st.markdown(f"**{row['name']}**")
+                    st.markdown(f"[🌐 Open website]({row['url']})")
 
                 with c2:
-                    st.write("")
+                    st.caption(f"Country code: {row['country_code']}")
 
                 with c3:
                     is_fav = any(
@@ -1523,8 +1433,9 @@ with tabs[3]:
             for i, uni in enumerate(st.session_state.uni_favorites):
                 fc1, fc2 = st.columns([4, 1])
                 with fc1:
-                    body = f"<a href='{uni.get('url','')}' target='_blank'>{uni.get('url','')}</a><div style='color:#666;font-size:13px'>{uni.get('country_code','')}</div>"
-                    render_card(uni.get('name',''), body)
+                    st.markdown(
+                        f"- [{uni['name']}]({uni['url']}) ({uni['country_code']})"
+                    )
                 with fc2:
                     if st.button("🗑 Remove", key=f"fav_del_{i}"):
                         st.session_state.uni_favorites.pop(i)
@@ -1575,10 +1486,9 @@ with tabs[4]:
                 days_left = (row["date_dt"].date() - date.today()).days
                 c1, c2, c3 = st.columns([3, 1, 1])
                 with c1:
-                    body = f"Date: {row.get('date','')}"
-                    if row.get('note'):
-                        body += f"<div style='color:#666;font-size:13px'>{row.get('note')}</div>"
-                    render_card(f"{row.get('uni','')} — {row.get('type','')}", body)
+                    st.write(f"**{row['uni']}** — {row['type']} — {row['date']}")
+                    if row.get("note"):
+                        st.caption(row.get("note"))
                 with c2:
                     st.metric("Days left", days_left)
                 with c3:
@@ -1605,8 +1515,24 @@ with tabs[4]:
         else:
             st.write("No favorites yet.")
     with col3:
-        st.subheader("Notes")
-        st.write("Automated 'chance' scoring has been removed. Use the AI Advisor for qualitative recommendations.")
+        st.subheader("Estimated chances (favorites)")
+        rows = []
+        for fav in st.session_state.uni_favorites:
+            uni_row = None
+            if universities_df is not None:
+                name_col_main2 = ensure_name_column(universities_df)
+                matches = universities_df[
+                    universities_df[name_col_main2].astype(str).str.lower()
+                    == str(fav.get("name", "")).lower()
+                ]
+                if not matches.empty:
+                    uni_row = matches.iloc[0].to_dict()
+            rows.append({"uni": fav.get("name"), "score": score})
+        if rows:
+            df_scores = pd.DataFrame(rows).set_index("uni")
+            st.table(df_scores)
+        else:
+            st.write("No favorites to evaluate.")
 
     st.markdown("---")
     export_payload_full = {
@@ -1655,11 +1581,9 @@ with tabs[5]:
 
     def render_resource_group(title, items):
         if items:
-            body = "<ul>"
+            st.markdown(f"**{title}:**")
             for it in items:
-                body += f"<li>{it}</li>"
-            body += "</ul>"
-            render_card(title, body)
+                st.markdown(f"- {it}")
 
     # SAT tab
     with prep_tabs[0]:
@@ -1718,14 +1642,8 @@ with tabs[5]:
 
             if st.session_state.prep_user_resources["SAT"]:
                 st.markdown("**Your SAT resources:**")
-                for idx, r in enumerate(st.session_state.prep_user_resources["SAT"]):
-                    c1, c2 = st.columns([11, 1])
-                    with c1:
-                        render_card("", r)
-                    with c2:
-                        if st.button("🗑", key=f"prep_sat_del_{idx}"):
-                            st.session_state.prep_user_resources["SAT"].pop(idx)
-                            st.rerun()
+                for r in st.session_state.prep_user_resources["SAT"]:
+                    st.markdown(f"- {r}")
 
     # IELTS tab
     with prep_tabs[1]:
@@ -1763,14 +1681,8 @@ with tabs[5]:
                     st.warning("Введите URL или описание ресурса.")
             if st.session_state.prep_user_resources["IELTS"]:
                 st.markdown("**Your IELTS resources:**")
-                for idx, r in enumerate(st.session_state.prep_user_resources["IELTS"]):
-                    c1, c2 = st.columns([11, 1])
-                    with c1:
-                        render_card("", r)
-                    with c2:
-                        if st.button("🗑", key=f"prep_ielts_del_{idx}"):
-                            st.session_state.prep_user_resources["IELTS"].pop(idx)
-                            st.rerun()
+                for r in st.session_state.prep_user_resources["IELTS"]:
+                    st.markdown(f"- {r}")
 
     # TOEFL tab
     with prep_tabs[2]:
@@ -1806,14 +1718,8 @@ with tabs[5]:
                     st.warning("Введите URL или описание ресурса.")
             if st.session_state.prep_user_resources["TOEFL"]:
                 st.markdown("**Your TOEFL resources:**")
-                for idx, r in enumerate(st.session_state.prep_user_resources["TOEFL"]):
-                    c1, c2 = st.columns([11, 1])
-                    with c1:
-                        render_card("", r)
-                    with c2:
-                        if st.button("🗑", key=f"prep_toefl_del_{idx}"):
-                            st.session_state.prep_user_resources["TOEFL"].pop(idx)
-                            st.rerun()
+                for r in st.session_state.prep_user_resources["TOEFL"]:
+                    st.markdown(f"- {r}")
 
     # ACT tab
     with prep_tabs[3]:
@@ -1848,14 +1754,8 @@ with tabs[5]:
                     st.warning("Введите URL или описание ресурса.")
             if st.session_state.prep_user_resources["ACT"]:
                 st.markdown("**Your ACT resources:**")
-                for idx, r in enumerate(st.session_state.prep_user_resources["ACT"]):
-                    c1, c2 = st.columns([11, 1])
-                    with c1:
-                        render_card("", r)
-                    with c2:
-                        if st.button("🗑", key=f"prep_act_del_{idx}"):
-                            st.session_state.prep_user_resources["ACT"].pop(idx)
-                            st.rerun()
+                for r in st.session_state.prep_user_resources["ACT"]:
+                    st.markdown(f"- {r}")
 
 # ---------------------------------------
 # AI Advisor Tab
@@ -1876,13 +1776,13 @@ with tabs[6]:
 
     with col_info:
         st.markdown("### 📋 Твой профиль")
-        render_metric_card("GPA", profile.get("gpa", "—"))
-        render_metric_card("Специальность", profile.get("major", "—"))
-        render_metric_card("Активности (0–5)", profile.get("extras_level", "—"))
+        st.metric("GPA", profile.get("gpa", "—"))
+        st.metric("Специальность", profile.get("major", "—"))
+        st.metric("Активности (0–5)", profile.get("extras_level", "—"))
 
         exams = profile.get("exams", {})
         passed = len([x for x in exams.values() if x.get("status") == "Already taken"])
-        render_metric_card("Сдано экзаменов", passed)
+        st.metric("Сдано экзаменов", passed)
 
         if st.button("🔄 Очистить историю"):
             st.session_state.ai_messages = []
@@ -1912,14 +1812,9 @@ with tabs[6]:
             }
 
             messages = [system_prompt] + st.session_state.ai_messages[-6:]
-            # Ask model to include a human-readable recommendations section at the end
             messages[-1]["content"] = (
                 f"Профиль студента:\n{profile_summary}\n\n"
-                f"Вопрос: {messages[-1]['content']}\n\n"
-                "Пожалуйста, в конце ответа добавь секцию 'Recommended universities:' (по одной строке на университет) "
-                "в формате: 'University Name — CountryCode — URL — Короткая причина'.\n"
-                "Пример:\nRecommended universities:\nHarvard University — US — https://www.harvard.edu — Strong CS program.\n"
-                "Это поможет приложению показать рекомендации в разделе 'Universities'."
+                f"Вопрос: {messages[-1]['content']}"
             )
 
             try:
@@ -1942,69 +1837,6 @@ with tabs[6]:
                 ai_text = data["choices"][0]["message"]["content"]
             except Exception as e:
                 ai_text = f"❌ Ошибка при запросе к Groq: {e}"
-
-            # Try to extract recommendations from a readable 'Recommended universities' section (fallback to JSON parsing)
-            try:
-                import re
-                parsed_recs = []
-                # Look for English or Russian heading
-                m = re.search(r'(?:Recommended universities|Recommended for you|Recommendations|Рекомендуемые университеты|Рекомендуемые):\s*\n', ai_text, re.I)
-                if m:
-                    rest = ai_text[m.end():]
-                    lines = rest.splitlines()
-                    for line in lines:
-                        if not line.strip():
-                            break
-                        line_clean = re.sub(r'^\s*(?:-|\d+\.)\s*', '', line).strip()
-                        url_match = re.search(r'(https?://\S+)', line_clean)
-                        url = url_match.group(1) if url_match else ''
-                        if url:
-                            line_no_url = line_clean.replace(url, '').strip().strip('-–—').strip()
-                        else:
-                            line_no_url = line_clean
-                        parts = re.split(r'\s*[-–—|]\s*', line_no_url)
-                        name = parts[0].strip() if parts else line_no_url.strip()
-                        country = ''
-                        reason = ''
-                        if len(parts) >= 2:
-                            maybe_country = parts[1].strip()
-                            if re.match(r'^[A-Za-z]{2,3}$', maybe_country) or len(maybe_country) <= 3:
-                                country = maybe_country
-                                if len(parts) >= 3:
-                                    reason = parts[2].strip()
-                            else:
-                                reason = parts[1].strip()
-                        if name:
-                            parsed_recs.append({"name": name, "country_code": country, "url": url, "reason": reason})
-                # fallback: try JSON-like block if none found
-                if not parsed_recs:
-                    json_block = None
-                    m = re.search(r'```json\s*(\{.*?\}|\[.*?\])\s*```', ai_text, re.S)
-                    if m:
-                        json_block = m.group(1)
-                    else:
-                        m2 = re.search(r'(\{(?:.|\n)*?\"recommended_unis\"(?:.|\n)*?\})', ai_text, re.S)
-                        if m2:
-                            json_block = m2.group(1)
-                    if json_block:
-                        parsed = json.loads(json_block)
-                        if isinstance(parsed, dict) and 'recommended_unis' in parsed:
-                            candidate = parsed['recommended_unis']
-                        else:
-                            candidate = parsed if isinstance(parsed, list) else []
-                        if isinstance(candidate, list):
-                            for item in candidate:
-                                if isinstance(item, dict):
-                                    name = item.get('name') or item.get('university') or item.get('title')
-                                    country = item.get('country_code', '')
-                                    url = item.get('url', '')
-                                    reason = item.get('reason', '')
-                                    if name:
-                                        parsed_recs.append({"name": name, "country_code": country, "url": url, "reason": reason})
-                if parsed_recs:
-                    st.session_state.ai_recommended_unis = parsed_recs
-            except Exception:
-                pass
 
             st.session_state.ai_messages.append(
                 {"role": "assistant", "content": ai_text}
