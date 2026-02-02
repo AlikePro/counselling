@@ -8,6 +8,119 @@ import os
 import requests
 import socket
 import io
+st.set_page_config(
+    page_title="App",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+st.markdown("""
+<style>
+
+/* ---------- Base ---------- */
+html, body, [class*="css"] {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+    background-color: #F8FAFC;
+    color: #0F172A;
+}
+
+/* Hide Streamlit branding */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* ---------- Containers / Cards ---------- */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.stContainer, .stExpander {
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 1.4rem;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    transition: all 0.25s ease;
+}
+
+.stContainer:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+}
+
+/* ---------- Buttons ---------- */
+.stButton > button {
+    background: #2563EB;
+    color: white;
+    border-radius: 12px;
+    padding: 0.55rem 1.2rem;
+    border: none;
+    font-weight: 500;
+    transition: all 0.25s ease;
+}
+
+.stButton > button:hover {
+    background: #1D4ED8;
+    transform: translateY(-1px);
+}
+
+.stButton > button:active {
+    transform: scale(0.98);
+}
+
+/* ---------- Inputs ---------- */
+input, textarea, select {
+    border-radius: 10px !important;
+    border: 1px solid #E5E7EB !important;
+    padding: 0.5rem 0.75rem !important;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: #2563EB !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* ---------- Sidebar ---------- */
+section[data-testid="stSidebar"] {
+    background: #F1F5F9;
+    border-right: 1px solid #E5E7EB;
+}
+
+section[data-testid="stSidebar"] * {
+    font-size: 0.95rem;
+}
+
+/* ---------- Tabs ---------- */
+.stTabs [data-baseweb="tab"] {
+    font-weight: 500;
+    color: #475569;
+}
+
+.stTabs [aria-selected="true"] {
+    color: #2563EB;
+}
+
+/* ---------- Animations ---------- */
+.fade-in {
+    animation: fadeIn 0.6s ease forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # ReportLab PDF support (optional)
 REPORTLAB_AVAILABLE = True
@@ -1323,6 +1436,7 @@ with tabs[2]:
                                     st.session_state._edit_task = None
                                     st.rerun()
 
+
 # ---------------------------------------
 # Universities Tab
 # ---------------------------------------
@@ -1834,4 +1948,3 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
-
