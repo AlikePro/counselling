@@ -200,7 +200,7 @@ div[role="progressbar"] > div {
 
 <div class="app-header">
   <div class="header-inner">
-    <img src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13"
+    <img src="NIS-Photo-1.png"
          class="header-logo">
     <div class="header-title">College Planner</div>
   </div>
@@ -2034,5 +2034,6 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
 
