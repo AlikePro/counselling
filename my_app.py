@@ -8,6 +8,7 @@ import os
 import requests
 import socket
 import io
+
 st.markdown("""
 <style>
 /* ===== HEADER ===== */
@@ -50,29 +51,39 @@ st.markdown("""
   </div>
 </div>
 """, unsafe_allow_html=True)
-st.markdown("""
-<style>
-/* ===== LAYOUT FIX ===== */
-.block-container {
-    padding-top: 90px !important;
-    padding-left: 300px !important;
-}
+sidebar_class = "sidebar-open" if st.session_state.sidebar_open else "sidebar-closed"
 
-/* ===== CUSTOM SIDEBAR ===== */
-.custom-sidebar {
+st.markdown(f"""
+<style>
+/* ===== CONTENT OFFSET (чтобы ничего не наезжало) ===== */
+.block-container {{
+    padding-top: 90px !important;
+}}
+
+/* ===== RIGHT SLIDING SIDEBAR ===== */
+.custom-sidebar {{
     position: fixed;
-    top: 64px;            /* ровно под header */
-    left: 0;
+    top: 64px;
+    right: 0;
     width: 260px;
     height: calc(100vh - 64px);
     background: #F8FAFC;
-    border-right: 1px solid #E5E7EB;
+    border-left: 1px solid #E5E7EB;
     padding: 24px 16px;
     z-index: 900;
-}
+    transition: transform 0.35s ease;
+}}
 
-/* ===== SIDEBAR TABS ===== */
-.nav-item {
+.sidebar-closed {{
+    transform: translateX(100%);
+}}
+
+.sidebar-open {{
+    transform: translateX(0);
+}}
+
+/* ===== NAV ITEMS ===== */
+.nav-item {{
     padding: 12px 16px;
     margin-bottom: 10px;
     border-radius: 14px;
@@ -80,22 +91,21 @@ st.markdown("""
     color: #475569;
     cursor: pointer;
     transition: all 0.25s ease;
-}
+}}
 
-.nav-item:hover {
+.nav-item:hover {{
     background: #E2E8F0;
-    transform: translateX(4px);
-}
+    transform: translateX(-4px);
+}}
 
-.nav-item.active {
+.nav-item.active {{
     background: white;
     color: #2563EB;
     box-shadow: 0 8px 24px rgba(37,99,235,0.15);
-}
+}}
 </style>
-""", unsafe_allow_html=True)
-st.markdown("""
-<div class="custom-sidebar">
+
+<div class="custom-sidebar {sidebar_class}">
     <div class="nav-item active">🎓 Profile</div>
     <div class="nav-item">📊 Career Test</div>
     <div class="nav-item">🏫 Universities</div>
@@ -103,6 +113,7 @@ st.markdown("""
     <div class="nav-item">⚙ Settings</div>
 </div>
 """, unsafe_allow_html=True)
+
 
 # ReportLab PDF support (optional)
 REPORTLAB_AVAILABLE = True
@@ -124,6 +135,9 @@ GROQ_MODEL = "llama-3.3-70b-versatile"
 # ---------------------------------------
 # Session state init (do this BEFORE using session_state)
 # ---------------------------------------
+if "sidebar_open" not in st.session_state:
+    st.session_state.sidebar_open = False
+
 if "holland_scores" not in st.session_state:
     st.session_state.holland_scores = None
 
@@ -1930,6 +1944,7 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
 
 
