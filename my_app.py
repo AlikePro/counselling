@@ -47,28 +47,65 @@ body {
 }
 
 /* ===============================
-   SAFE TOP HEADER (NO SIDEBAR BUG)
+   HIDE STREAMLIT TOP BAR VISUALLY
 ================================ */
-.safe-header {
+header[data-testid="stHeader"] {
+    opacity: 0;
+    pointer-events: none;
+    height: 0;
+}
+
+/* ===============================
+   OVERLAY APP HEADER
+================================ */
+.overlay-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 64px;
+    background: rgba(248,250,252,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid #E5E7EB;
+    z-index: 10000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* center content */
+.overlay-header-inner {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 0.9rem 1.3rem;
-    background: var(--bg-card);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 8px 24px rgba(15,23,42,0.05);
-    margin-bottom: 1.6rem;
 }
 
-.safe-header img {
-    height: 38px;
+.overlay-header img {
+    height: 36px;
 }
 
-.safe-header-title {
-    font-size: 1.05rem;
+.overlay-header-title {
+    font-size: 1.1rem;
     font-weight: 600;
+    color: #0F172A;
 }
 
+/* ===============================
+   PUSH CONTENT DOWN
+================================ */
+.block-container {
+    padding-top: 90px !important;
+}
+
+</style>
+
+<div class="overlay-header">
+    <div class="overlay-header-inner">
+        <img src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13">
+        <div class="overlay-header-title">College Planner</div>
+    </div>
+</div>
 /* ===============================
    CARDS / CONTAINERS
 ================================ */
@@ -2007,6 +2044,7 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
 
 
