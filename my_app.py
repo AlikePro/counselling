@@ -21,7 +21,6 @@ div[data-testid="stToolbar"] {
 </style>
 """, unsafe_allow_html=True)
 
-
 st.markdown("""
 <style>
 /* ===== HEADER ===== */
@@ -54,6 +53,29 @@ st.markdown("""
     font-weight: 600;
     color: #0F172A;
 }
+
+.hero {
+    text-align: center;
+    margin-top: 16px;
+    margin-bottom: 28px;
+}
+
+.hero-logo {
+    height: 68px;
+    margin-bottom: 10px;
+}
+
+.hero-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0F172A;
+}
+
+.hero-subtitle {
+    font-size: 0.95rem;
+    color: #64748B;
+    margin-top: 6px;
+}
 </style>
 
 <div class="app-header">
@@ -65,33 +87,28 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+sidebar_class = "sidebar-open"
+
 st.markdown(f"""
 <style>
 /* ===== CONTENT OFFSET (чтобы ничего не наезжало) ===== */
 .block-container {{
     padding-top: 90px !important;
+    padding-left: 260px !important;
+    padding-right: 380px !important;
 }}
 
-/* ===== RIGHT SLIDING SIDEBAR ===== */
+/* ===== LEFT SIDEBAR ===== */
 .custom-sidebar {{
     position: fixed;
     top: 64px;
-    right: 0;
-    width: 260px;
+    left: 0;
+    width: 240px;
     height: calc(100vh - 64px);
     background: #F8FAFC;
-    border-left: 1px solid #E5E7EB;
+    border-right: 1px solid #E5E7EB;
     padding: 24px 16px;
     z-index: 900;
-    transition: transform 0.35s ease;
-}}
-
-.sidebar-closed {{
-    transform: translateX(100%);
-}}
-
-.sidebar-open {{
-    transform: translateX(0);
 }}
 
 /* ===== NAV ITEMS ===== */
@@ -107,7 +124,7 @@ st.markdown(f"""
 
 .nav-item:hover {{
     background: #E2E8F0;
-    transform: translateX(-4px);
+    transform: translateX(4px);
 }}
 
 .nav-item.active {{
@@ -116,7 +133,6 @@ st.markdown(f"""
     box-shadow: 0 8px 24px rgba(37,99,235,0.15);
 }}
 </style>
-
 <div class="custom-sidebar {sidebar_class}">
     <div class="nav-item active">🎓 Profile</div>
     <div class="nav-item">📊 Career Test</div>
@@ -125,7 +141,7 @@ st.markdown(f"""
     <div class="nav-item">⚙ Settings</div>
 </div>
 """, unsafe_allow_html=True)
-panel_class = "panel-open" if st.session_state.info_panel_open else "panel-closed"
+panel_class = "panel-open" if st.session_state.get("info_panel_open", True) else "panel-closed"
 
 st.markdown(f"""
 <style>
@@ -170,26 +186,51 @@ st.markdown(f"""
     padding: 14px;
     font-size: 0.9rem;
 }}
+
+.panel-progress {{
+    width: 100%;
+    height: 8px;
+    background: #E2E8F0;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 8px;
+}}
+
+.panel-progress-bar {{
+    height: 100%;
+    background: linear-gradient(90deg, #3B82F6, #6366F1);
+    width: 0%;
+}}
 </style>
 
+""", unsafe_allow_html=True)
+
+sidebar_profile = st.session_state.get("profile", {})
+gpa_value = sidebar_profile.get("gpa", "—")
+major_value = sidebar_profile.get("major", "—")
+total_tasks = len(st.session_state.get("tasks", []))
+done_tasks = sum(1 for t in st.session_state.get("tasks", []) if t.get("done"))
+progress_ratio = (done_tasks / total_tasks) if total_tasks else 0.0
+progress_percent = int(progress_ratio * 100)
+
+st.markdown(f"""
 <div class="info-panel {panel_class}">
     <div class="panel-section">
         <div class="panel-title">📌 Overview</div>
         <div class="panel-box">
-            Physics & Math track<br>
-            Intended major: CS / Data Science
+            Intended major: {major_value}<br>
+            GPA: {gpa_value}
+            <div class="panel-progress">
+                <div class="panel-progress-bar" style="width: {progress_percent}%;"></div>
+            </div>
+            <div style="margin-top:6px;color:#64748B;font-size:0.8rem;">
+                Tasks: {done_tasks}/{total_tasks} done
+            </div>
         </div>
     </div>
 
     <div class="panel-section">
-        <div class="panel-title">📊 GPA</div>
-        <div class="panel-box">
-            4.8 / 5.0
-        </div>
-    </div>
-
-    <div class="panel-section">
-        <div class="panel-title">📄 Profile</div>
+        <div class="panel-title">📄 Quick actions</div>
         <div class="panel-box">
             Export student profile as PDF
         </div>
@@ -219,7 +260,7 @@ GROQ_MODEL = "llama-3.3-70b-versatile"
 # Session state init (do this BEFORE using session_state)
 # ---------------------------------------
 if "info_panel_open" not in st.session_state:
-    st.session_state.info_panel_open = False
+    st.session_state.info_panel_open = True
 
 if "sidebar_open" not in st.session_state:
     st.session_state.sidebar_open = False
@@ -2030,6 +2071,7 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
 
 
