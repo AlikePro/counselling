@@ -212,6 +212,19 @@ st.markdown("""
 
 </style>
 """, unsafe_allow_html=True)
+st.markdown("""
+<style>
+section[data-testid="stSidebar"] {
+    width: 260px;
+}
+
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2 {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ReportLab PDF support (optional)
 REPORTLAB_AVAILABLE = True
@@ -2039,5 +2052,6 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
 
