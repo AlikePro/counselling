@@ -64,6 +64,19 @@ header[data-testid="stHeader"] {
     box-shadow: 0 10px 30px rgba(15,23,42,0.05);
     transition: all 0.25s ease;
 }
+.burger-btn {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: #0F172A;
+    padding: 4px 8px;
+    border-radius: 8px;
+}
+
+.burger-btn:hover {
+    background: rgba(15,23,42,0.05);
+}
 
 .stContainer:hover {
     transform: translateY(-2px);
@@ -223,6 +236,7 @@ header[data-testid="stHeader"] {
 
 <div class="overlay-header">
     <div class="overlay-header-inner">
+        <button onclick="toggleSidebar()" class="burger-btn">☰</button>
         <img src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13">
         <div class="overlay-header-title">College Planner</div>
     </div>
@@ -2055,6 +2069,70 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+st.markdown("""
+<style>
+
+/* ===============================
+   SIDEBAR POPUP MODE
+================================ */
+
+/* hide sidebar by default */
+section[data-testid="stSidebar"] {
+    position: fixed;
+    top: 64px;                 /* height of header */
+    left: -280px;
+    width: 260px;
+    height: calc(100% - 64px);
+    background: #F1F5F9;
+    border-right: 1px solid #E5E7EB;
+    transition: left 0.3s ease;
+    z-index: 9999;
+}
+
+/* sidebar visible */
+section[data-testid="stSidebar"].sidebar-open {
+    left: 0;
+}
+
+/* ===============================
+   OVERLAY BACKDROP
+================================ */
+.sidebar-backdrop {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 64px);
+    background: rgba(15,23,42,0.35);
+    backdrop-filter: blur(2px);
+    z-index: 9998;
+    display: none;
+}
+
+.sidebar-backdrop.show {
+    display: block;
+}
+
+</style>
+
+<script>
+function toggleSidebar() {
+    const sidebar = parent.document.querySelector('section[data-testid="stSidebar"]');
+    const backdrop = parent.document.querySelector('.sidebar-backdrop');
+
+    if (!sidebar) return;
+
+    sidebar.classList.toggle('sidebar-open');
+
+    if (backdrop) {
+        backdrop.classList.toggle('show');
+    }
+}
+</script>
+
+<div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+""", unsafe_allow_html=True)
+
 
 
 
