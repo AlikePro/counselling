@@ -8,6 +8,48 @@ import os
 import requests
 import socket
 import io
+st.markdown("""
+<style>
+
+/* ---------- WOW Tabs ---------- */
+.stTabs {
+    margin-top: 1.2rem;
+}
+
+.stTabs [role="tablist"] {
+    gap: 10px;
+    padding-bottom: 8px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    background: #F1F5F9;
+    border-radius: 999px;
+    padding: 0.45rem 1.05rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #475569;
+    transition: all 0.25s ease;
+}
+
+.stTabs [data-baseweb="tab"]:hover {
+    background: #E2E8F0;
+    transform: translateY(-1px);
+}
+
+.stTabs [aria-selected="true"] {
+    background: white !important;
+    color: #2563EB !important;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.15);
+    transform: translateY(-2px);
+}
+
+/* remove default underline */
+.stTabs [data-baseweb="tab"]::after {
+    display: none;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # ReportLab PDF support (optional)
 REPORTLAB_AVAILABLE = True
@@ -1835,3 +1877,4 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
