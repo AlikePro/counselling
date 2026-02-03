@@ -8,240 +8,114 @@ import os
 import requests
 import socket
 import io
+# 1. Настройка страницы (обязательно в самом начале)
+st.set_page_config(layout="wide", page_title="College Planner")
+
+# 2. Единый блок стилей
 st.markdown("""
 <style>
+    /* --- DESIGN SYSTEM --- */
+    :root {
+        --bg-main: #F8FAFC;
+        --bg-card: #FFFFFF;
+        --bg-soft: #F1F5F9;
+        --text-main: #0F172A;
+        --accent: #2563EB;
+        --header-height: 64px;
+        --z-header: 10000;
+        --z-sidebar: 9999;
+    }
 
-/* ===============================
-   DESIGN SYSTEM
-================================ */
-:root {
-    --bg-main: #F8FAFC;
-    --bg-card: #FFFFFF;
-    --bg-soft: #F1F5F9;
-    --text-main: #0F172A;
-    --text-muted: #64748B;
-    --accent: #2563EB;
-    --border-soft: #E5E7EB;
-    --radius-lg: 18px;
-    --radius-md: 14px;
-    --radius-pill: 999px;
-}
+    /* --- BASE & HIDE DEFAULT UI --- */
+    #MainMenu, footer, header[data-testid="stHeader"] {
+        visibility: hidden;
+        height: 0;
+    }
 
-/* ===============================
-   BASE
-================================ */
-html, body, [class*="css"] {
-    font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
-}
+    .block-container {
+        padding-top: calc(var(--header-height) + 2rem) !important;
+    }
 
-body {
-    background: var(--bg-main);
-    color: var(--text-main);
-}
+    /* --- CUSTOM HEADER --- */
+    .overlay-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: var(--header-height);
+        background: rgba(248, 250, 252, 0.9);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid #E5E7EB;
+        z-index: var(--z-header);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+    }
 
-#MainMenu, footer {visibility: hidden;}
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
 
-.block-container {
-    padding-top: 1.2rem;
-    padding-bottom: 2.5rem;
-}
+    .header-logo {
+        height: 32px;
+        border-radius: 6px;
+    }
 
-/* ===============================
-   HIDE STREAMLIT TOP BAR VISUALLY
-================================ */
-header[data-testid="stHeader"] {
-    opacity: 0;
-    pointer-events: none;
-    height: 0;
-}
-/* ===============================
-   CARDS / CONTAINERS
-================================ */
-.stContainer, .stExpander {
-    background: var(--bg-card);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem;
-    box-shadow: 0 10px 30px rgba(15,23,42,0.05);
-    transition: all 0.25s ease;
-}
-.burger-btn {
-    background: none;
-    border: none;
-    font-size: 1.4rem;
-    cursor: pointer;
-    color: #0F172A;
-    padding: 4px 8px;
-    border-radius: 8px;
-}
+    .header-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--text-main);
+    }
 
-.burger-btn:hover {
-    background: rgba(15,23,42,0.05);
-}
+    /* --- SIDEBAR CORRECTION --- */
+    /* Сдвигаем сайдбар вниз, чтобы он начинался под хедером */
+    section[data-testid="stSidebar"] {
+        top: var(--header-height) !important;
+        height: calc(100vh - var(--header-height)) !important;
+        z-index: var(--z-sidebar) !important;
+        background-color: var(--bg-soft) !important;
+    }
 
-.stContainer:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 16px 40px rgba(15,23,42,0.08);
-}
+    /* Корректируем внутренний отступ сайдбара */
+    [data-testid="stSidebarUserContent"] {
+        padding-top: 1rem !important;
+    }
 
-/* ===============================
-   BUTTONS
-================================ */
-.stButton > button {
-    background: var(--accent);
-    color: white;
-    border-radius: var(--radius-md);
-    padding: 0.6rem 1.4rem;
-    border: none;
-    font-weight: 500;
-    transition: all 0.25s ease;
-}
+    /* Скрываем дефолтную кнопку открытия/закрытия, если хотим только свой стиль */
+    [data-testid="stSidebarCollapseButton"] {
+        display: flex !important;
+        top: 10px !important; /* Настраиваем положение кнопки под ваш дизайн */
+    }
 
-.stButton > button:hover {
-    transform: translateY(-2px);
-    background: #1D4ED8;
-}
-
-/* ===============================
-   INPUTS
-================================ */
-input, textarea, select {
-    border-radius: 12px !important;
-    border: 1px solid var(--border-soft) !important;
-}
-
-input:focus, textarea:focus, select:focus {
-    border-color: var(--accent) !important;
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
-}
-
-/* ===============================
-   SIDEBAR (SAFE)
-================================ */
-section[data-testid="stSidebar"] {
-    background: var(--bg-soft);
-    border-right: 1px solid var(--border-soft);
-}
-
-/* ===============================
-   CENTER WOW TABS
-================================ */
-.stTabs {
-    display: flex;
-    justify-content: center;
-    margin-top: 1.4rem;
-}
-
-.stTabs [role="tablist"] {
-    display: flex;
-    justify-content: center;
-    gap: 14px;
-}
-
-.stTabs [data-baseweb="tab"] {
-    background: var(--bg-soft);
-    border-radius: var(--radius-pill);
-    padding: 0.7rem 1.6rem;
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    transition: all 0.25s ease;
-}
-
-.stTabs [data-baseweb="tab"]:hover {
-    background: #E2E8F0;
-    transform: translateY(-2px);
-}
-
-.stTabs [aria-selected="true"] {
-    background: white !important;
-    color: var(--accent) !important;
-    box-shadow: 0 12px 30px rgba(37,99,235,0.2);
-    transform: translateY(-3px);
-}
-
-.stTabs [data-baseweb="tab"]::after {
-    display: none;
-}
-
-/* ===============================
-   FADE IN
-================================ */
-.fade-in {
-    animation: fadeIn 0.5s ease forwards;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-</style>
-""", unsafe_allow_html=True)
-st.markdown("""
-<style>
-
-/* ===============================
-   HIDE STREAMLIT TOP BAR VISUALLY
-================================ */
-header[data-testid="stHeader"] {
-    opacity: 0;
-    pointer-events: none;
-    height: 0;
-}
-
-/* ===============================
-   OVERLAY APP HEADER
-================================ */
-.overlay-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 64px;
-    background: rgba(248,250,252,0.92);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid #E5E7EB;
-    z-index: 10000;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* center content */
-.overlay-header-inner {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-
-.overlay-header img {
-    height: 36px;
-}
-
-.overlay-header-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #0F172A;
-}
-
-/* ===============================
-   PUSH CONTENT DOWN
-================================ */
-.block-container {
-    padding-top: 90px !important;
-}
-
+    /* --- UI ELEMENTS --- */
+    .stTabs [data-baseweb="tab"] {
+        background: var(--bg-soft);
+        border-radius: 20px;
+        padding: 0.5rem 1.2rem;
+        margin: 0 5px;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: var(--accent) !important;
+        color: white !important;
+    }
 </style>
 
 <div class="overlay-header">
-    <div class="overlay-header-inner">
-        <button onclick="toggleSidebar()" class="burger-btn">☰</button>
-        <img src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13">
-        <div class="overlay-header-title">College Planner</div>
+    <div class="header-content">
+        <img class="header-logo" src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13">
+        <div class="header-title">College Planner</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# 3. Наполнение сайдбара (теперь он будет на своем месте)
+with st.sidebar:
+    st.title("Навигация")
+    st.radio("Выберите раздел", ["Дашборд", "Расписание", "Заметки"])
+    st.info("Сайдбар теперь начинается ровно под синим хедером.")
 
 # ReportLab PDF support (optional)
 REPORTLAB_AVAILABLE = True
@@ -2132,6 +2006,7 @@ function toggleSidebar() {
 
 <div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
 """, unsafe_allow_html=True)
+
 
 
 
