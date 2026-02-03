@@ -39,53 +39,32 @@ body {
     color: var(--text-main);
 }
 
-#MainMenu, footer, header {visibility: hidden;}
+#MainMenu, footer {visibility: hidden;}
 
 .block-container {
-    padding-top: 1.5rem;
+    padding-top: 1.2rem;
     padding-bottom: 2.5rem;
 }
 
 /* ===============================
-   TOP HEADER
+   SAFE TOP HEADER (NO SIDEBAR BUG)
 ================================ */
-<style>
-
-/* FIX HEADER VS SIDEBAR */
-.app-header {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    background: rgba(248,250,252,0.9);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid #E5E7EB;
-    padding: 0.7rem 2rem;
-    margin-bottom: 1.6rem;
-
-    /* 👇 КЛЮЧЕВОЕ */
-    margin-left: 260px;              /* ширина sidebar */
-    width: calc(100% - 260px);
-}
-
-/* адаптация если sidebar свернут */
-@media (max-width: 900px) {
-    .app-header {
-        margin-left: 0;
-        width: 100%;
-    }
-}
-
-.header-inner {
+.safe-header {
     display: flex;
     align-items: center;
     gap: 14px;
+    padding: 0.9rem 1.3rem;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 24px rgba(15,23,42,0.05);
+    margin-bottom: 1.6rem;
 }
 
-.header-logo {
+.safe-header img {
     height: 38px;
 }
 
-.header-title {
+.safe-header-title {
     font-size: 1.05rem;
     font-weight: 600;
 }
@@ -124,10 +103,6 @@ body {
     background: #1D4ED8;
 }
 
-.stButton > button:active {
-    transform: scale(0.97);
-}
-
 /* ===============================
    INPUTS
 ================================ */
@@ -142,12 +117,11 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* ===============================
-   SIDEBAR (SECONDARY)
+   SIDEBAR (SAFE)
 ================================ */
 section[data-testid="stSidebar"] {
     background: var(--bg-soft);
     border-right: 1px solid var(--border-soft);
-    width: 260px;
 }
 
 /* ===============================
@@ -168,7 +142,7 @@ section[data-testid="stSidebar"] {
 .stTabs [data-baseweb="tab"] {
     background: var(--bg-soft);
     border-radius: var(--radius-pill);
-    padding: 0.65rem 1.5rem;
+    padding: 0.7rem 1.6rem;
     font-size: 1rem;
     font-weight: 500;
     color: var(--text-muted);
@@ -192,34 +166,18 @@ section[data-testid="stSidebar"] {
 }
 
 /* ===============================
-   PROGRESS BAR
-================================ */
-div[role="progressbar"] > div {
-    background: linear-gradient(90deg, #2563EB, #60A5FA);
-    border-radius: 999px;
-}
-
-/* ===============================
    FADE IN
 ================================ */
 .fade-in {
-    animation: fadeIn 0.6s ease forwards;
+    animation: fadeIn 0.5s ease forwards;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 </style>
-
-<div class="app-header">
-  <div class="header-inner">
-    <img src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13"
-         class="header-logo">
-    <div class="header-title">College Planner</div>
-  </div>
-</div>
 """, unsafe_allow_html=True)
 
 
@@ -2049,5 +2007,6 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
 
