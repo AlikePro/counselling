@@ -124,55 +124,6 @@ section[data-testid="stSidebar"] * {
 st.markdown("""
 <style>
 
-/* ---------- Centered WOW Tabs ---------- */
-.stTabs {
-    margin-top: 1.4rem;
-    display: flex;
-    justify-content: center;
-}
-
-.stTabs [role="tablist"] {
-    display: flex;
-    justify-content: center;
-    gap: 14px;
-    padding-bottom: 12px;
-}
-
-/* individual tab */
-.stTabs [data-baseweb="tab"] {
-    background: #F1F5F9;
-    border-radius: 999px;
-    padding: 0.6rem 1.35rem;   /* bigger */
-    font-size: 1rem;          /* bigger text */
-    font-weight: 500;
-    color: #475569;
-    transition: all 0.25s ease;
-}
-
-/* hover */
-.stTabs [data-baseweb="tab"]:hover {
-    background: #E2E8F0;
-    transform: translateY(-2px);
-}
-
-/* active */
-.stTabs [aria-selected="true"] {
-    background: #FFFFFF !important;
-    color: #2563EB !important;
-    box-shadow: 0 10px 28px rgba(37, 99, 235, 0.18);
-    transform: translateY(-3px);
-}
-
-/* remove underline */
-.stTabs [data-baseweb="tab"]::after {
-    display: none;
-}
-
-</style>
-""", unsafe_allow_html=True)
-st.markdown("""
-<style>
-
 /* ---------- WOW Tabs ---------- */
 .stTabs {
     margin-top: 1.2rem;
@@ -210,19 +161,6 @@ st.markdown("""
     display: none;
 }
 
-</style>
-""", unsafe_allow_html=True)
-st.markdown("""
-<style>
-section[data-testid="stSidebar"] {
-    width: 260px;
-}
-
-section[data-testid="stSidebar"] h1,
-section[data-testid="stSidebar"] h2 {
-    font-size: 1rem;
-    opacity: 0.8;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -2052,6 +1990,3 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
-
-
-
