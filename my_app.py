@@ -8,114 +8,130 @@ import os
 import requests
 import socket
 import io
-# 1. Настройка страницы (обязательно в самом начале)
-st.set_page_config(layout="wide", page_title="College Planner")
+import streamlit as st
+from streamlit_elements import elements, mui, html
 
-# 2. Единый блок стилей
-st.markdown("""
-<style>
-    /* --- DESIGN SYSTEM --- */
-    :root {
-        --bg-main: #F8FAFC;
-        --bg-card: #FFFFFF;
-        --bg-soft: #F1F5F9;
-        --text-main: #0F172A;
-        --accent: #2563EB;
-        --header-height: 64px;
-        --z-header: 10000;
-        --z-sidebar: 9999;
-    }
+st.set_page_config(layout="wide")
 
-    /* --- BASE & HIDE DEFAULT UI --- */
-    #MainMenu, footer, header[data-testid="stHeader"] {
-        visibility: hidden;
-        height: 0;
-    }
+# state
+if "sidebar_open" not in st.session_state:
+    st.session_state.sidebar_open = True
 
-    .block-container {
-        padding-top: calc(var(--header-height) + 2rem) !important;
-    }
+if "sidebar_side" not in st.session_state:
+    st.session_state.sidebar_side = "left"  # or "right"
 
-    /* --- CUSTOM HEADER --- */
-    .overlay-header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: var(--header-height);
-        background: rgba(248, 250, 252, 0.9);
-        backdrop-filter: blur(12px);
-        border-bottom: 1px solid #E5E7EB;
-        z-index: var(--z-header);
-        display: flex;
-        align-items: center;
-        padding: 0 20px;
-    }
 
-    .header-content {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
+def toggle_sidebar():
+    st.session_state.sidebar_open = not st.session_state.sidebar_open
 
-    .header-logo {
-        height: 32px;
-        border-radius: 6px;
-    }
 
-    .header-title {
-        font-weight: 700;
-        font-size: 1.1rem;
-        color: var(--text-main);
-    }
+def switch_side():
+    st.session_state.sidebar_side = (
+        "right" if st.session_state.sidebar_side == "left" else "left"
+    )
 
-    /* --- SIDEBAR CORRECTION --- */
-    /* Сдвигаем сайдбар вниз, чтобы он начинался под хедером */
-    section[data-testid="stSidebar"] {
-        top: var(--header-height) !important;
-        height: calc(100vh - var(--header-height)) !important;
-        z-index: var(--z-sidebar) !important;
-        background-color: var(--bg-soft) !important;
-    }
 
-    /* Корректируем внутренний отступ сайдбара */
-    [data-testid="stSidebarUserContent"] {
-        padding-top: 1rem !important;
-    }
+with elements("ui"):
 
-    /* Скрываем дефолтную кнопку открытия/закрытия, если хотим только свой стиль */
-    [data-testid="stSidebarCollapseButton"] {
-        display: flex !important;
-        top: 10px !important; /* Настраиваем положение кнопки под ваш дизайн */
-    }
+    # ===== HEADER =====
+    mui.AppBar(
+        position="fixed",
+        sx={
+            "height": "64px",
+            "justifyContent": "center",
+            "background": "rgba(248,250,252,0.95)",
+            "backdropFilter": "blur(12px)",
+            "boxShadow": "0 2px 12px rgba(15,23,42,0.08)",
+            "zIndex": 1300,
+        },
+    )(
+        mui.Toolbar()(
+            mui.IconButton(
+                mui.Icon("menu"),
+                onClick=toggle_sidebar,
+                sx={"color": "#0F172A"},
+            ),
+            mui.Box(
+                sx={
+                    "display": "flex",
+                    "alignItems": "center",
+                    "gap": "12px",
+                    "margin": "0 auto",
+                }
+            )(
+                html.img(
+                    src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13",
+                    style={"height": "36px"},
+                ),
+                mui.Typography(
+                    "College Planner",
+                    variant="h6",
+                    sx={"fontWeight": 600, "color": "#0F172A"},
+                ),
+            ),
+            mui.IconButton(
+                mui.Icon("swap_horiz"),
+                onClick=switch_side,
+                sx={"color": "#0F172A"},
+            ),
+        )
+    )
 
-    /* --- UI ELEMENTS --- */
-    .stTabs [data-baseweb="tab"] {
-        background: var(--bg-soft);
-        border-radius: 20px;
-        padding: 0.5rem 1.2rem;
-        margin: 0 5px;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background: var(--accent) !important;
-        color: white !important;
-    }
-</style>
+    # ===== SIDEBAR =====
+    mui.Drawer(
+        variant="persistent",
+        anchor=st.session_state.sidebar_side,
+        open=st.session_state.sidebar_open,
+        sx={
+            "width": 260,
+            "& .MuiDrawer-paper": {
+                "width": 260,
+                "top": "64px",
+                "height": "calc(100% - 64px)",
+                "background": "#F1F5F9",
+                "borderRight": "1px solid #E5E7EB",
+            },
+        },
+    )(
+        mui.Box(sx={"padding": "16px"})(
+            mui.Typography("Navigation", sx={"fontWeight": 600}),
+            mui.List()(
+                mui.ListItem(button=True)("Career Test"),
+                mui.ListItem(button=True)("Profile"),
+                mui.ListItem(button=True)("Universities"),
+                mui.ListItem(button=True)("Deadlines"),
+            )
+        )
+    )
 
-<div class="overlay-header">
-    <div class="header-content">
-        <img class="header-logo" src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13">
-        <div class="header-title">College Planner</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# 3. Наполнение сайдбара (теперь он будет на своем месте)
-with st.sidebar:
-    st.title("Навигация")
-    st.radio("Выберите раздел", ["Дашборд", "Расписание", "Заметки"])
-    st.info("Сайдбар теперь начинается ровно под синим хедером.")
+    # ===== MAIN CONTENT =====
+    mui.Box(
+        sx={
+            "marginTop": "64px",
+            "padding": "24px",
+            "marginLeft": "260px" if st.session_state.sidebar_open and st.session_state.sidebar_side == "left" else "0",
+            "marginRight": "260px" if st.session_state.sidebar_open and st.session_state.sidebar_side == "right" else "0",
+            "transition": "margin 0.3s ease",
+        }
+    )(
+        mui.Typography(
+            "Welcome to College Planner",
+            variant="h4",
+            sx={"fontWeight": 600, "marginBottom": "16px"},
+        ),
+        mui.Card(
+            sx={
+                "borderRadius": "18px",
+                "boxShadow": "0 10px 30px rgba(15,23,42,0.08)",
+                "padding": "20px",
+            }
+        )(
+            mui.Typography(
+                "This is clean, comfortable, real UI.",
+                sx={"color": "#475569"},
+            )
+        ),
+    )
 
 # ReportLab PDF support (optional)
 REPORTLAB_AVAILABLE = True
@@ -1943,72 +1959,3 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
-st.markdown("""
-<style>
-
-/* ===============================
-   SIDEBAR POPUP MODE
-================================ */
-
-/* hide sidebar by default */
-section[data-testid="stSidebar"] {
-    position: fixed;
-    top: 64px;                 /* height of header */
-    left: -280px;
-    width: 260px;
-    height: calc(100% - 64px);
-    background: #F1F5F9;
-    border-right: 1px solid #E5E7EB;
-    transition: left 0.3s ease;
-    z-index: 9999;
-}
-
-/* sidebar visible */
-section[data-testid="stSidebar"].sidebar-open {
-    left: 0;
-}
-
-/* ===============================
-   OVERLAY BACKDROP
-================================ */
-.sidebar-backdrop {
-    position: fixed;
-    top: 64px;
-    left: 0;
-    width: 100%;
-    height: calc(100% - 64px);
-    background: rgba(15,23,42,0.35);
-    backdrop-filter: blur(2px);
-    z-index: 9998;
-    display: none;
-}
-
-.sidebar-backdrop.show {
-    display: block;
-}
-
-</style>
-
-<script>
-function toggleSidebar() {
-    const sidebar = parent.document.querySelector('section[data-testid="stSidebar"]');
-    const backdrop = parent.document.querySelector('.sidebar-backdrop');
-
-    if (!sidebar) return;
-
-    sidebar.classList.toggle('sidebar-open');
-
-    if (backdrop) {
-        backdrop.classList.toggle('show');
-    }
-}
-</script>
-
-<div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
-""", unsafe_allow_html=True)
-
-
-
-
-
-
