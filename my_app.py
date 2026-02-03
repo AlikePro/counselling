@@ -49,15 +49,30 @@ body {
 /* ===============================
    TOP HEADER
 ================================ */
+<style>
+
+/* FIX HEADER VS SIDEBAR */
 .app-header {
     position: sticky;
     top: 0;
     z-index: 1000;
     background: rgba(248,250,252,0.9);
     backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-soft);
+    border-bottom: 1px solid #E5E7EB;
     padding: 0.7rem 2rem;
-    margin: -2rem -2rem 1.6rem -2rem;
+    margin-bottom: 1.6rem;
+
+    /* 👇 КЛЮЧЕВОЕ */
+    margin-left: 260px;              /* ширина sidebar */
+    width: calc(100% - 260px);
+}
+
+/* адаптация если sidebar свернут */
+@media (max-width: 900px) {
+    .app-header {
+        margin-left: 0;
+        width: 100%;
+    }
 }
 
 .header-inner {
@@ -2034,4 +2049,5 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
