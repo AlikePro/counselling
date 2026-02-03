@@ -9,6 +9,9 @@ import requests
 import socket
 import io
 
+if "sidebar_open" not in st.session_state:
+    st.session_state.sidebar_open = False
+
 st.markdown("""
 <style>
 /* ===== HEADER ===== */
@@ -1944,6 +1947,7 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
 
 
