@@ -64,7 +64,6 @@ st.markdown("""
   </div>
 </div>
 """, unsafe_allow_html=True)
-sidebar_class = "sidebar-open" if st.session_state.sidebar_open else "sidebar-closed"
 
 st.markdown(f"""
 <style>
@@ -2031,6 +2030,7 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
 
 
