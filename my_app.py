@@ -11,45 +11,202 @@ import io
 st.markdown("""
 <style>
 
-/* ---------- WOW Tabs ---------- */
+/* ===============================
+   DESIGN SYSTEM
+================================ */
+:root {
+    --bg-main: #F8FAFC;
+    --bg-card: #FFFFFF;
+    --bg-soft: #F1F5F9;
+    --text-main: #0F172A;
+    --text-muted: #64748B;
+    --accent: #2563EB;
+    --border-soft: #E5E7EB;
+    --radius-lg: 18px;
+    --radius-md: 14px;
+    --radius-pill: 999px;
+}
+
+/* ===============================
+   BASE
+================================ */
+html, body, [class*="css"] {
+    font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+    background: var(--bg-main);
+    color: var(--text-main);
+}
+
+#MainMenu, footer, header {visibility: hidden;}
+
+.block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 2.5rem;
+}
+
+/* ===============================
+   TOP HEADER
+================================ */
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(248,250,252,0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-soft);
+    padding: 0.7rem 2rem;
+    margin: -2rem -2rem 1.6rem -2rem;
+}
+
+.header-inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.header-logo {
+    height: 38px;
+}
+
+.header-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+/* ===============================
+   CARDS / CONTAINERS
+================================ */
+.stContainer, .stExpander {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px rgba(15,23,42,0.05);
+    transition: all 0.25s ease;
+}
+
+.stContainer:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(15,23,42,0.08);
+}
+
+/* ===============================
+   BUTTONS
+================================ */
+.stButton > button {
+    background: var(--accent);
+    color: white;
+    border-radius: var(--radius-md);
+    padding: 0.6rem 1.4rem;
+    border: none;
+    font-weight: 500;
+    transition: all 0.25s ease;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px);
+    background: #1D4ED8;
+}
+
+.stButton > button:active {
+    transform: scale(0.97);
+}
+
+/* ===============================
+   INPUTS
+================================ */
+input, textarea, select {
+    border-radius: 12px !important;
+    border: 1px solid var(--border-soft) !important;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
+}
+
+/* ===============================
+   SIDEBAR (SECONDARY)
+================================ */
+section[data-testid="stSidebar"] {
+    background: var(--bg-soft);
+    border-right: 1px solid var(--border-soft);
+    width: 260px;
+}
+
+/* ===============================
+   CENTER WOW TABS
+================================ */
 .stTabs {
-    margin-top: 1.2rem;
+    display: flex;
+    justify-content: center;
+    margin-top: 1.4rem;
 }
 
 .stTabs [role="tablist"] {
-    gap: 10px;
-    padding-bottom: 8px;
+    display: flex;
+    justify-content: center;
+    gap: 14px;
 }
 
 .stTabs [data-baseweb="tab"] {
-    background: #F1F5F9;
-    border-radius: 999px;
-    padding: 0.45rem 1.05rem;
-    font-size: 0.95rem;
+    background: var(--bg-soft);
+    border-radius: var(--radius-pill);
+    padding: 0.65rem 1.5rem;
+    font-size: 1rem;
     font-weight: 500;
-    color: #475569;
+    color: var(--text-muted);
     transition: all 0.25s ease;
 }
 
 .stTabs [data-baseweb="tab"]:hover {
     background: #E2E8F0;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
 }
 
 .stTabs [aria-selected="true"] {
     background: white !important;
-    color: #2563EB !important;
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.15);
-    transform: translateY(-2px);
+    color: var(--accent) !important;
+    box-shadow: 0 12px 30px rgba(37,99,235,0.2);
+    transform: translateY(-3px);
 }
 
-/* remove default underline */
 .stTabs [data-baseweb="tab"]::after {
     display: none;
 }
 
+/* ===============================
+   PROGRESS BAR
+================================ */
+div[role="progressbar"] > div {
+    background: linear-gradient(90deg, #2563EB, #60A5FA);
+    border-radius: 999px;
+}
+
+/* ===============================
+   FADE IN
+================================ */
+.fade-in {
+    animation: fadeIn 0.6s ease forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 </style>
+
+<div class="app-header">
+  <div class="header-inner">
+    <img src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13"
+         class="header-logo">
+    <div class="header-title">College Planner</div>
+  </div>
+</div>
 """, unsafe_allow_html=True)
+
 
 # ReportLab PDF support (optional)
 REPORTLAB_AVAILABLE = True
@@ -1877,4 +2034,5 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
