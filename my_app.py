@@ -1,6 +1,7 @@
 # college_planner_app.py
 import streamlit as st
 import json
+import base64
 from datetime import datetime, date
 import pandas as pd
 from pathlib import Path
@@ -439,61 +440,78 @@ def generate_export_pdf(export_payload: dict) -> bytes:
     doc.build(story)
     return buf.getvalue()
 
-with st.container():
-    left, right = st.columns([1, 5])
-    with left:
-        st.markdown("## 🎓")
-    with right:
-        st.markdown(
-            """
-            # College Planner  
-            <span style="font-size:14px;color:gray;">
-            Track your profile, exams, universities, deadlines and chat with an AI advisor.
-            </span>
-            """,
-            unsafe_allow_html=True,
+sidebar_profile = st.session_state.get("profile", {})
+gpa_value = sidebar_profile.get("gpa", "—")
+major_value = sidebar_profile.get("major", "—")
+total_tasks = len(st.session_state.get("tasks", []))
+done_tasks = sum(1 for t in st.session_state.get("tasks", []) if t.get("done"))
+progress_ratio = (done_tasks / total_tasks) if total_tasks else 0.0
+progress_percent = int(progress_ratio * 100)
+export_payload = {
+    "profile": st.session_state.get("profile", {}),
+    "tasks": st.session_state.get("tasks", []),
+    "favorites": st.session_state.get("uni_favorites", []),
+    "deadlines": st.session_state.get("deadlines", []),
+    "notes": st.session_state.get("uni_notes", {}),
+}
+if REPORTLAB_AVAILABLE:
+    try:
+        pdf_bytes_side = generate_export_pdf(export_payload)
+        pdf_b64 = base64.b64encode(pdf_bytes_side).decode("utf-8")
+        export_html = (
+            "<div class='panel-box'>"
+            '<a class="panel-download" '
+            'href="data:application/pdf;base64,'
+            + pdf_b64
+            + '" download="college_planner_export.pdf">'
+            "⬇️ Export as PDF</a>"
+            "</div>"
         )
-st.write("")  # small spacing
+    except Exception as e:
+        export_html = f"<div class='panel-box'>PDF export failed: {e}</div>"
+else:
+    export_html = (
+        "<div class='panel-box'>"
+        "PDF export unavailable — install 'reportlab' and redeploy."
+        "</div>"
+    )
 
-# ---------------------------------------
-# Sidebar overview
-# ---------------------------------------
-with st.sidebar:
-    st.markdown("### 📌 Overview")
+st.markdown(f"""
+<div class="info-panel {panel_class}">
+    <div class="panel-section">
+        <div class="panel-title">📌 Overview</div>
+        <div class="panel-box">
+            Intended major: {major_value}<br>
+            GPA: {gpa_value}
+            <div class="panel-progress">
+                <div class="panel-progress-bar" style="width: {progress_percent}%;"></div>
+            </div>
+            <div style="margin-top:6px;color:#64748B;font-size:0.8rem;">
+                Tasks: {done_tasks}/{total_tasks} done
+            </div>
+        </div>
+    </div>
+    <div class="panel-section">
+        <div class="panel-title">📄 Export</div>
+        {export_html}
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-    sidebar_profile = st.session_state.get("profile", {})
-    st.metric("GPA", sidebar_profile.get("gpa", "—"))
-    st.metric("Intended major", sidebar_profile.get("major", "—"))
-
-    total_tasks = len(st.session_state.get("tasks", []))
-    done_tasks = sum(1 for t in st.session_state.get("tasks", []) if t.get("done"))
-    st.progress(done_tasks / total_tasks if total_tasks else 0.0)
-    st.caption(f"Tasks: {done_tasks}/{total_tasks} done")
-
-    st.markdown("---")
-    st.markdown("### ⚙️ Data")
-
-    # Export (PDF only)
-    export_payload = {
-        "profile": st.session_state.profile,
-        "tasks": st.session_state.tasks,
-        "favorites": st.session_state.uni_favorites,
-        "deadlines": st.session_state.deadlines,
-        "notes": st.session_state.uni_notes,
-    }
-    if REPORTLAB_AVAILABLE:
-        try:
-            pdf_bytes_side = generate_export_pdf(export_payload)
-            st.download_button(
-                "⬇️ Export data (PDF)",
-                data=pdf_bytes_side,
-                file_name="college_planner_export.pdf",
-                mime="application/pdf",
-            )
-        except Exception as e:
-            st.error("PDF export failed: " + str(e))
-    else:
-        st.warning("PDF export unavailable — install 'reportlab' and redeploy to enable PDF export.")
+st.markdown(
+    """
+    <div class="hero">
+        <img class="hero-logo"
+             src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13"
+             alt="College Planner logo">
+        <div class="hero-title">College Planner</div>
+        <div class="hero-subtitle">
+            Track your profile, exams, universities, deadlines and chat with an AI advisor.
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 # ---------------------------------------
 # Utility functions
@@ -2071,6 +2089,7 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
 
 
