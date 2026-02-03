@@ -8,130 +8,101 @@ import os
 import requests
 import socket
 import io
-import streamlit as st
-from streamlit_elements import elements, mui, html
+st.markdown("""
+<style>
+/* ===== HEADER ===== */
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: white;
+    border-bottom: 1px solid #E5E7EB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
 
-st.set_page_config(layout="wide")
+.header-inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
 
-# state
-if "sidebar_open" not in st.session_state:
-    st.session_state.sidebar_open = True
+.header-logo {
+    height: 36px;
+}
 
-if "sidebar_side" not in st.session_state:
-    st.session_state.sidebar_side = "left"  # or "right"
+.header-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #0F172A;
+}
+</style>
 
+<div class="app-header">
+  <div class="header-inner">
+    <img class="header-logo"
+         src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13">
+    <div class="header-title">College Planner</div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+st.markdown("""
+<style>
+/* ===== LAYOUT FIX ===== */
+.block-container {
+    padding-top: 90px !important;
+    padding-left: 300px !important;
+}
 
-def toggle_sidebar():
-    st.session_state.sidebar_open = not st.session_state.sidebar_open
+/* ===== CUSTOM SIDEBAR ===== */
+.custom-sidebar {
+    position: fixed;
+    top: 64px;            /* ровно под header */
+    left: 0;
+    width: 260px;
+    height: calc(100vh - 64px);
+    background: #F8FAFC;
+    border-right: 1px solid #E5E7EB;
+    padding: 24px 16px;
+    z-index: 900;
+}
 
+/* ===== SIDEBAR TABS ===== */
+.nav-item {
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    font-weight: 500;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
 
-def switch_side():
-    st.session_state.sidebar_side = (
-        "right" if st.session_state.sidebar_side == "left" else "left"
-    )
+.nav-item:hover {
+    background: #E2E8F0;
+    transform: translateX(4px);
+}
 
-
-with elements("ui"):
-
-    # ===== HEADER =====
-    mui.AppBar(
-        position="fixed",
-        sx={
-            "height": "64px",
-            "justifyContent": "center",
-            "background": "rgba(248,250,252,0.95)",
-            "backdropFilter": "blur(12px)",
-            "boxShadow": "0 2px 12px rgba(15,23,42,0.08)",
-            "zIndex": 1300,
-        },
-    )(
-        mui.Toolbar()(
-            mui.IconButton(
-                mui.Icon("menu"),
-                onClick=toggle_sidebar,
-                sx={"color": "#0F172A"},
-            ),
-            mui.Box(
-                sx={
-                    "display": "flex",
-                    "alignItems": "center",
-                    "gap": "12px",
-                    "margin": "0 auto",
-                }
-            )(
-                html.img(
-                    src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13",
-                    style={"height": "36px"},
-                ),
-                mui.Typography(
-                    "College Planner",
-                    variant="h6",
-                    sx={"fontWeight": 600, "color": "#0F172A"},
-                ),
-            ),
-            mui.IconButton(
-                mui.Icon("swap_horiz"),
-                onClick=switch_side,
-                sx={"color": "#0F172A"},
-            ),
-        )
-    )
-
-    # ===== SIDEBAR =====
-    mui.Drawer(
-        variant="persistent",
-        anchor=st.session_state.sidebar_side,
-        open=st.session_state.sidebar_open,
-        sx={
-            "width": 260,
-            "& .MuiDrawer-paper": {
-                "width": 260,
-                "top": "64px",
-                "height": "calc(100% - 64px)",
-                "background": "#F1F5F9",
-                "borderRight": "1px solid #E5E7EB",
-            },
-        },
-    )(
-        mui.Box(sx={"padding": "16px"})(
-            mui.Typography("Navigation", sx={"fontWeight": 600}),
-            mui.List()(
-                mui.ListItem(button=True)("Career Test"),
-                mui.ListItem(button=True)("Profile"),
-                mui.ListItem(button=True)("Universities"),
-                mui.ListItem(button=True)("Deadlines"),
-            )
-        )
-    )
-
-    # ===== MAIN CONTENT =====
-    mui.Box(
-        sx={
-            "marginTop": "64px",
-            "padding": "24px",
-            "marginLeft": "260px" if st.session_state.sidebar_open and st.session_state.sidebar_side == "left" else "0",
-            "marginRight": "260px" if st.session_state.sidebar_open and st.session_state.sidebar_side == "right" else "0",
-            "transition": "margin 0.3s ease",
-        }
-    )(
-        mui.Typography(
-            "Welcome to College Planner",
-            variant="h4",
-            sx={"fontWeight": 600, "marginBottom": "16px"},
-        ),
-        mui.Card(
-            sx={
-                "borderRadius": "18px",
-                "boxShadow": "0 10px 30px rgba(15,23,42,0.08)",
-                "padding": "20px",
-            }
-        )(
-            mui.Typography(
-                "This is clean, comfortable, real UI.",
-                sx={"color": "#475569"},
-            )
-        ),
-    )
+.nav-item.active {
+    background: white;
+    color: #2563EB;
+    box-shadow: 0 8px 24px rgba(37,99,235,0.15);
+}
+</style>
+""", unsafe_allow_html=True)
+st.markdown("""
+<div class="custom-sidebar">
+    <div class="nav-item active">🎓 Profile</div>
+    <div class="nav-item">📊 Career Test</div>
+    <div class="nav-item">🏫 Universities</div>
+    <div class="nav-item">📁 Documents</div>
+    <div class="nav-item">⚙ Settings</div>
+</div>
+""", unsafe_allow_html=True)
 
 # ReportLab PDF support (optional)
 REPORTLAB_AVAILABLE = True
@@ -1959,3 +1930,6 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
+
+
