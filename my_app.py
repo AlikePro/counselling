@@ -9,8 +9,18 @@ import requests
 import socket
 import io
 
-if "sidebar_open" not in st.session_state:
-    st.session_state.sidebar_open = False
+st.markdown("""
+<style>
+/* Hide Streamlit default UI */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+div[data-testid="stToolbar"] {
+    display: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 st.markdown("""
 <style>
@@ -116,6 +126,77 @@ st.markdown(f"""
     <div class="nav-item">⚙ Settings</div>
 </div>
 """, unsafe_allow_html=True)
+panel_class = "panel-open" if st.session_state.info_panel_open else "panel-closed"
+
+st.markdown(f"""
+<style>
+/* ===== RIGHT INFO PANEL ===== */
+.info-panel {{
+    position: fixed;
+    top: 64px; /* под твоим header */
+    right: 0;
+    width: 340px;
+    height: calc(100vh - 64px);
+    background: #FFFFFF;
+    border-left: 1px solid #E5E7EB;
+    padding: 24px;
+    z-index: 950;
+    transition: transform 0.35s ease;
+    box-shadow: -20px 0 40px rgba(15,23,42,0.08);
+}}
+
+.panel-closed {{
+    transform: translateX(100%);
+}}
+
+.panel-open {{
+    transform: translateX(0);
+}}
+
+/* ===== PANEL SECTIONS ===== */
+.panel-section {{
+    margin-bottom: 22px;
+}}
+
+.panel-title {{
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #0F172A;
+    margin-bottom: 8px;
+}}
+
+.panel-box {{
+    background: #F8FAFC;
+    border-radius: 14px;
+    padding: 14px;
+    font-size: 0.9rem;
+}}
+</style>
+
+<div class="info-panel {panel_class}">
+    <div class="panel-section">
+        <div class="panel-title">📌 Overview</div>
+        <div class="panel-box">
+            Physics & Math track<br>
+            Intended major: CS / Data Science
+        </div>
+    </div>
+
+    <div class="panel-section">
+        <div class="panel-title">📊 GPA</div>
+        <div class="panel-box">
+            4.8 / 5.0
+        </div>
+    </div>
+
+    <div class="panel-section">
+        <div class="panel-title">📄 Profile</div>
+        <div class="panel-box">
+            Export student profile as PDF
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 
 # ReportLab PDF support (optional)
@@ -138,6 +219,9 @@ GROQ_MODEL = "llama-3.3-70b-versatile"
 # ---------------------------------------
 # Session state init (do this BEFORE using session_state)
 # ---------------------------------------
+if "info_panel_open" not in st.session_state:
+    st.session_state.info_panel_open = False
+
 if "sidebar_open" not in st.session_state:
     st.session_state.sidebar_open = False
 
@@ -1947,6 +2031,7 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
 
 
