@@ -88,59 +88,53 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-sidebar_class = "sidebar-open"
-
-st.markdown(f"""
+st.markdown("""
 <style>
+/* ===== FORCE LIGHT/WHITE MODE ===== */
+html, body, [class*="css"], .stApp {
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+}
+
+div[data-testid="stAppViewContainer"],
+div[data-testid="stSidebar"],
+div[data-testid="stSidebarContent"] {
+    background: #FFFFFF !important;
+}
+
 /* ===== CONTENT OFFSET (чтобы ничего не наезжало) ===== */
 .block-container {{
     padding-top: 90px !important;
-    padding-left: 260px !important;
     padding-right: 380px !important;
 }}
 
-/* ===== LEFT SIDEBAR ===== */
-.custom-sidebar {{
-    position: fixed;
-    top: 64px;
-    left: 0;
-    width: 240px;
-    height: calc(100vh - 64px);
+/* ===== SIDEBAR NAV STYLES ===== */
+section[data-testid="stSidebar"] .stRadio label {{
+    font-weight: 600;
+    color: #1E293B;
+}}
+
+section[data-testid="stSidebar"] div[role="radiogroup"] > label {{
     background: #F8FAFC;
-    border-right: 1px solid #E5E7EB;
-    padding: 24px 16px;
-    z-index: 900;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
 }}
 
-/* ===== NAV ITEMS ===== */
-.nav-item {{
-    padding: 12px 16px;
-    margin-bottom: 10px;
-    border-radius: 14px;
-    font-weight: 500;
-    color: #475569;
-    cursor: pointer;
-    transition: all 0.25s ease;
-}}
+/* ===== MOBILE ===== */
+@media (max-width: 900px) {{
+    .block-container {{
+        padding-top: 86px !important;
+        padding-right: 1rem !important;
+        padding-left: 1rem !important;
+    }}
 
-.nav-item:hover {{
-    background: #E2E8F0;
-    transform: translateX(4px);
-}}
-
-.nav-item.active {{
-    background: white;
-    color: #2563EB;
-    box-shadow: 0 8px 24px rgba(37,99,235,0.15);
+    .info-panel {{
+        display: none !important;
+    }}
 }}
 </style>
-<div class="custom-sidebar {sidebar_class}">
-    <div class="nav-item active">🎓 Profile</div>
-    <div class="nav-item">📊 Career Test</div>
-    <div class="nav-item">🏫 Universities</div>
-    <div class="nav-item">📁 Documents</div>
-    <div class="nav-item">⚙ Settings</div>
-</div>
 """, unsafe_allow_html=True)
 panel_class = "panel-open" if st.session_state.get("info_panel_open", True) else "panel-closed"
 
@@ -1213,9 +1207,9 @@ def calculate_holland_code():
     st.session_state.holland_code = "-".join([item[0] for item in sorted_scores[:3]])
 
 # ---------------------------------------
-# UI Layout: Tabs
-# -------
-tabs = st.tabs([
+# UI Layout: Sidebar Navigation (replaces center tabs)
+# ---------------------------------------
+NAV_ITEMS = [
     "🧭 Career Test",
     "👤 Profile",
     "✅ Tasks",
@@ -1223,12 +1217,26 @@ tabs = st.tabs([
     "📅 Deadlines",
     "📚 Preparation",
     "💡 AI Advisor",
-])
+]
+
+if "active_tab" not in st.session_state:
+    st.session_state.active_tab = NAV_ITEMS[0]
+
+with st.sidebar:
+    st.markdown("### Navigation")
+    active_tab = st.radio(
+        "Sections",
+        NAV_ITEMS,
+        index=NAV_ITEMS.index(st.session_state.active_tab) if st.session_state.active_tab in NAV_ITEMS else 0,
+        label_visibility="collapsed",
+    )
+
+st.session_state.active_tab = active_tab
 
 # -------
 # Career Test Tab
 # -------
-with tabs[0]:
+if active_tab == "🧭 Career Test":
     st.header("🧭 Holland Career Orientation Test")
     st.caption("Discover your career type using the Holland RIASEC model. Answer 60 questions in 6 blocks.")
     current_block = st.session_state.career_test_current_block
@@ -1299,7 +1307,7 @@ with tabs[0]:
 # -------
 # Profile Tab (merged with Exams)
 # -------
-with tabs[1]:
+if active_tab == "👤 Profile":
     st.header("🧭 Career Orientation")
     if st.session_state.holland_code:
         st.success(f"Holland Type: **{st.session_state.holland_code}**")
@@ -1457,7 +1465,7 @@ with tabs[1]:
 # ---------------------------------------
 # Tasks Tab — Regional Kanban
 # ---------------------------------------
-with tabs[2]:
+if active_tab == "✅ Tasks":
     st.header("✅ Tasks — Regional Board")
     st.caption("Organize tasks by region. Add custom regions and manage tasks (move, reorder, complete).")
 
@@ -1582,7 +1590,7 @@ with tabs[2]:
 # Universities Tab
 # ---------------------------------------
 
-with tabs[3]:
+if active_tab == "🏫 Universities":
     st.header("Universities 🌍")
     st.caption("Ищи университеты по названию или коду страны и сразу переходи на их сайт. Плюс — избранное и рандомный выбор.")
 
@@ -1692,7 +1700,7 @@ with tabs[3]:
 # ---------------------------------------
 # Deadlines & Dashboard Tab
 # ---------------------------------------
-with tabs[4]:
+if active_tab == "📅 Deadlines":
     st.header("📅 Deadlines")
     st.caption("Track application, scholarship and other important dates.")
 
@@ -1816,7 +1824,7 @@ with tabs[4]:
     # JSON import removed (PDF-only workflow)
 
 # --- NEW: Preparation Tab (fixed with proper with/expander structure) ---
-with tabs[5]:
+if active_tab == "📚 Preparation":
     st.header("📚 Preparation Materials")
     st.caption("Resources, guides and practice materials for popular exams. Раскрой секции для деталей.")
 
@@ -2007,7 +2015,7 @@ with tabs[5]:
 # ---------------------------------------
 # AI Advisor Tab
 # ---------------------------------------
-with tabs[6]:
+if active_tab == "💡 AI Advisor":
     st.header("💡 AI Advisor — персональные советы")
     st.caption("Задай вопрос по профориентации, выбору вуза или подготовке к экзаменам.")
 
@@ -2089,12 +2097,3 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
-
-
-
-
-
-
-
-
-
