@@ -2101,3 +2101,4 @@ if selected_tab == '💡 AI Advisor':
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
