@@ -1,3 +1,29 @@
+
+# === GLOBAL LIGHT THEME ===
+st.markdown("""
+<style>
+html, body, [class*="css"] {
+    background-color: white !important;
+    color: black !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# === SIDEBAR NAV ===
+st.sidebar.title("Menu")
+collapsed = st.sidebar.checkbox("☰ Collapse sidebar", value=False)
+selected_tab = st.sidebar.radio("Navigate", ['🧭 Career Test', '👤 Profile', '✅ Tasks', '🏫 Universities', '📅 Deadlines', '📚 Preparation', '💡 AI Advisor'])
+
+if collapsed:
+    st.markdown("""
+    <style>
+    section[data-testid="stSidebar"] {
+        width: 0 !important;
+        min-width: 0 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # college_planner_app.py
 import streamlit as st
 import json
@@ -1215,20 +1241,10 @@ def calculate_holland_code():
 # ---------------------------------------
 # UI Layout: Tabs
 # -------
-tabs = st.tabs([
-    "🧭 Career Test",
-    "👤 Profile",
-    "✅ Tasks",
-    "🏫 Universities",
-    "📅 Deadlines",
-    "📚 Preparation",
-    "💡 AI Advisor",
-])
-
 # -------
 # Career Test Tab
 # -------
-with tabs[0]:
+if selected_tab == '🧭 Career Test':
     st.header("🧭 Holland Career Orientation Test")
     st.caption("Discover your career type using the Holland RIASEC model. Answer 60 questions in 6 blocks.")
     current_block = st.session_state.career_test_current_block
@@ -1299,7 +1315,7 @@ with tabs[0]:
 # -------
 # Profile Tab (merged with Exams)
 # -------
-with tabs[1]:
+if selected_tab == '👤 Profile':
     st.header("🧭 Career Orientation")
     if st.session_state.holland_code:
         st.success(f"Holland Type: **{st.session_state.holland_code}**")
@@ -1457,7 +1473,7 @@ with tabs[1]:
 # ---------------------------------------
 # Tasks Tab — Regional Kanban
 # ---------------------------------------
-with tabs[2]:
+if selected_tab == '✅ Tasks':
     st.header("✅ Tasks — Regional Board")
     st.caption("Organize tasks by region. Add custom regions and manage tasks (move, reorder, complete).")
 
@@ -1582,7 +1598,7 @@ with tabs[2]:
 # Universities Tab
 # ---------------------------------------
 
-with tabs[3]:
+if selected_tab == '🏫 Universities':
     st.header("Universities 🌍")
     st.caption("Ищи университеты по названию или коду страны и сразу переходи на их сайт. Плюс — избранное и рандомный выбор.")
 
@@ -1692,7 +1708,7 @@ with tabs[3]:
 # ---------------------------------------
 # Deadlines & Dashboard Tab
 # ---------------------------------------
-with tabs[4]:
+if selected_tab == '📅 Deadlines':
     st.header("📅 Deadlines")
     st.caption("Track application, scholarship and other important dates.")
 
@@ -1816,15 +1832,13 @@ with tabs[4]:
     # JSON import removed (PDF-only workflow)
 
 # --- NEW: Preparation Tab (fixed with proper with/expander structure) ---
-with tabs[5]:
+if selected_tab == '📚 Preparation':
     st.header("📚 Preparation Materials")
     st.caption("Resources, guides and practice materials for popular exams. Раскрой секции для деталей.")
 
     # Ensure session lists for user-added resources
     if "prep_user_resources" not in st.session_state:
         st.session_state.prep_user_resources = {"SAT": [], "IELTS": [], "TOEFL": [], "ACT": []}
-
-    prep_tabs = st.tabs(["SAT", "IELTS", "TOEFL", "ACT"])
 
     def render_resource_group(title, items):
         if items:
@@ -1833,6 +1847,7 @@ with tabs[5]:
                 st.markdown(f"- {it}")
 
     # SAT tab
+    prep_tabs = st.tabs(["SAT", "IELTS", "TOEFL", "ACT"])
     with prep_tabs[0]:
         with st.expander("About SAT — формат и что важно знать", expanded=False):
             st.write(
@@ -2007,7 +2022,7 @@ with tabs[5]:
 # ---------------------------------------
 # AI Advisor Tab
 # ---------------------------------------
-with tabs[6]:
+if selected_tab == '💡 AI Advisor':
     st.header("💡 AI Advisor — персональные советы")
     st.caption("Задай вопрос по профориентации, выбору вуза или подготовке к экзаменам.")
 
@@ -2089,11 +2104,3 @@ with tabs[6]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
-
-
-
-
-
-
-
-
