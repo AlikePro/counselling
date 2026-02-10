@@ -59,16 +59,19 @@ st.markdown("""
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    color: #0F172A;
 }
 
 .header-inner {
     display: flex;
     align-items: center;
     gap: 14px;
+    color: #0F172A;
 }
 
 .header-logo {
     height: 36px;
+    color: #0F172A;
 }
 
 .header-title {
@@ -81,6 +84,7 @@ st.markdown("""
     text-align: center;
     margin-top: 16px;
     margin-bottom: 28px;
+    color: #0F172A;
 }
 
 .hero-logo {
@@ -147,6 +151,7 @@ st.markdown(f"""
 
 .nav-item:hover {{
     background: #E2E8F0;
+    color: #0F172A;
     transform: translateX(4px);
 }}
 
@@ -2100,5 +2105,6 @@ if selected_tab == '💡 AI Advisor':
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
 
