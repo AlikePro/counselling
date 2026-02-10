@@ -1,4 +1,14 @@
-
+# college_planner_app.py
+import streamlit as st
+import json
+import base64
+from datetime import datetime, date
+import pandas as pd
+from pathlib import Path
+import os
+import requests
+import socket
+import io
 # === GLOBAL LIGHT THEME ===
 st.markdown("""
 <style>
@@ -23,19 +33,6 @@ if collapsed:
     }
     </style>
     """, unsafe_allow_html=True)
-
-# college_planner_app.py
-import streamlit as st
-import json
-import base64
-from datetime import datetime, date
-import pandas as pd
-from pathlib import Path
-import os
-import requests
-import socket
-import io
-
 st.markdown("""
 <style>
 /* Hide Streamlit default UI */
@@ -2104,3 +2101,4 @@ if selected_tab == '💡 AI Advisor':
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
