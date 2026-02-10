@@ -14,7 +14,6 @@ st.markdown("""
 <style>
 html, body, [class*="css"] {
     background-color: white !important;
-    color: black !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -2101,4 +2100,5 @@ if selected_tab == '💡 AI Advisor':
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
 
