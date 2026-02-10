@@ -10,6 +10,9 @@ import requests
 import socket
 import io
 # === GLOBAL LIGHT THEME ===
+
+st.set_page_config(page_title="Orken+ College Planner", layout="wide")
+
 st.markdown("""
 <style>
 html, body, [class*="css"] {
@@ -19,157 +22,97 @@ html, body, [class*="css"] {
 """, unsafe_allow_html=True)
 
 # === SIDEBAR NAV ===
-st.sidebar.title("Menu")
-collapsed = st.sidebar.checkbox("☰ Collapse sidebar", value=False)
-selected_tab = st.sidebar.radio("Navigate", ['🧭 Career Test', '👤 Profile', '✅ Tasks', '🏫 Universities', '📅 Deadlines', '📚 Preparation', '💡 AI Advisor'])
+# === NAV + RESPONSIVE SIDEBARS (REPLACE OLD SIDEBAR + CUSTOM HTML SIDEBAR) ===
 
-if collapsed:
-    st.markdown("""
-    <style>
-    section[data-testid="stSidebar"] {
-        width: 0 !important;
-        min-width: 0 !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-st.markdown("""
+# --- session toggles ---
+if "left_sidebar_open" not in st.session_state:
+    st.session_state.left_sidebar_open = True
+
+if "right_panel_open" not in st.session_state:
+    st.session_state.right_panel_open = True
+
+# --- tiny header controls (work on mobile too) ---
+top_controls = st.container()
+with top_controls:
+    c1, c2, c3 = st.columns([1, 6, 1])
+    with c1:
+        if st.button("☰", key="toggle_left_sidebar"):
+            st.session_state.left_sidebar_open = not st.session_state.left_sidebar_open
+            st.rerun()
+    with c3:
+        if st.button("ℹ️", key="toggle_right_panel"):
+            st.session_state.right_panel_open = not st.session_state.right_panel_open
+            st.rerun()
+
+# --- LEFT SIDEBAR NAV (real Streamlit widgets) ---
+NAV_LABELS = [
+    '🧭 Career Test',
+    '👤 Profile',
+    '✅ Tasks',
+    '🏫 Universities',
+    '📅 Deadlines',
+    '📚 Preparation',
+    '💡 AI Advisor'
+]
+
+with st.sidebar:
+    st.title("Menu")
+    selected_tab = st.radio("Navigate", NAV_LABELS, label_visibility="collapsed")
+
+# --- CSS: collapsible left sidebar + responsive padding ---
+left_open = st.session_state.left_sidebar_open
+right_open = st.session_state.right_panel_open
+
+st.markdown(
+    f"""
 <style>
-/* Hide Streamlit default UI */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
-div[data-testid="stToolbar"] {
-    display: none !important;
-}
+/* Hide Streamlit default chrome */
+#MainMenu {{visibility: hidden;}}
+footer {{visibility: hidden;}}
+header {{visibility: hidden;}}
+div[data-testid="stToolbar"] {{display: none !important;}}
+
+/* Keep your fixed header space */
+.block-container {{
+    padding-top: 90px !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}}
+
+/* Desktop layout: allow room for sidebar + right panel when open */
+@media (min-width: 900px) {{
+    .block-container {{
+        padding-left: {("260px" if left_open else "1rem")} !important;
+        padding-right: {("360px" if right_open else "1rem")} !important;
+    }}
+
+}}
+
+/* Streamlit sidebar animation (left) */
+section[data-testid="stSidebar"] {{
+    transition: transform 0.25s ease, width 0.25s ease;
+}}
+section[data-testid="stSidebar"] > div:first-child {{
+    width: 240px;
+}}
+{"section[data-testid='stSidebar']{transform: translateX(-110%);}" if not left_open else ""}
+
+/* On phones: sidebar becomes overlay — force it to behave and not trap the screen */
+@media (max-width: 899px) {{
+    section[data-testid="stSidebar"] > div:first-child {{
+        width: 80vw !important;
+        max-width: 320px !important;
+    }}
+}}
 </style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<style>
-/* ===== HEADER ===== */
-.app-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 64px;
-    background: white;
-    border-bottom: 1px solid #E5E7EB;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    color: #0F172A;
-}
-
-.header-inner {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    color: #0F172A;
-}
-
-.header-logo {
-    height: 36px;
-    color: #0F172A;
-}
-
-.header-title {
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: #0F172A;
-}
-
-.hero {
-    text-align: center;
-    margin-top: 16px;
-    margin-bottom: 28px;
-    color: #0F172A;
-}
-
-.hero-logo {
-    height: 68px;
-    margin-bottom: 10px;
-}
-
-.hero-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #0F172A;
-}
-
-.hero-subtitle {
-    font-size: 0.95rem;
-    color: #64748B;
-    margin-top: 6px;
-}
-</style>
-
-<div class="app-header">
-  <div class="header-inner">
-    <img class="header-logo"
-         src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13">
-    <div class="header-title">College Planner</div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 sidebar_class = "sidebar-open"
 
-st.markdown(f"""
-<style>
-/* ===== CONTENT OFFSET (чтобы ничего не наезжало) ===== */
-.block-container {{
-    padding-top: 90px !important;
-    padding-left: 260px !important;
-    padding-right: 380px !important;
-}}
 
-/* ===== LEFT SIDEBAR ===== */
-.custom-sidebar {{
-    position: fixed;
-    top: 64px;
-    left: 0;
-    width: 240px;
-    height: calc(100vh - 64px);
-    background: #F8FAFC;
-    border-right: 1px solid #E5E7EB;
-    padding: 24px 16px;
-    z-index: 900;
-}}
-
-/* ===== NAV ITEMS ===== */
-.nav-item {{
-    padding: 12px 16px;
-    margin-bottom: 10px;
-    border-radius: 14px;
-    font-weight: 500;
-    color: #475569;
-    cursor: pointer;
-    transition: all 0.25s ease;
-}}
-
-.nav-item:hover {{
-    background: #E2E8F0;
-    color: #0F172A;
-    transform: translateX(4px);
-}}
-
-.nav-item.active {{
-    background: white;
-    color: #2563EB;
-    box-shadow: 0 8px 24px rgba(37,99,235,0.15);
-}}
-</style>
-<div class="custom-sidebar {sidebar_class}">
-    <div class="nav-item active">🎓 Profile</div>
-    <div class="nav-item">📊 Career Test</div>
-    <div class="nav-item">🏫 Universities</div>
-    <div class="nav-item">📁 Documents</div>
-    <div class="nav-item">⚙ Settings</div>
-</div>
-""", unsafe_allow_html=True)
-panel_class = "panel-open" if st.session_state.get("info_panel_open", True) else "panel-closed"
+panel_class = "panel-open" if st.session_state.get("right_panel_open", True) else "panel-closed"
 
 st.markdown(f"""
 <style>
@@ -195,7 +138,14 @@ st.markdown(f"""
 .panel-open {{
     transform: translateX(0);
 }}
-
+/* ===== MOBILE FIX FOR RIGHT PANEL ===== */
+@media (max-width: 899px) {{
+  .info-panel {{
+    width: 92vw !important;
+    max-width: 360px !important;
+    padding: 16px !important;
+  }}
+}}st
 /* ===== PANEL SECTIONS ===== */
 .panel-section {{
     margin-bottom: 22px;
@@ -348,13 +298,7 @@ for t in st.session_state.tasks:
         st.session_state.task_id_counter += 1
         t["id"] = st.session_state.task_id_counter
 
-# ---------------------------------------
-# Global page config & header
-# ---------------------------------------
-st.set_page_config(
-    page_title="Orken+ College Planner",
-    layout="wide",
-)
+
 
 # Nicely formatted PDF generator (placed before UI so sidebar can call it)
 def generate_export_pdf(export_payload: dict) -> bytes:
