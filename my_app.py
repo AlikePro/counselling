@@ -9,213 +9,85 @@ import os
 import requests
 import socket
 import io
-# === GLOBAL LIGHT THEME ===
-
-st.set_page_config(page_title="Orken+ College Planner", layout="wide")
-
 st.markdown("""
 <style>
-html, body, [class*="css"] {
-    background-color: white !important;
+/* Hide Streamlit default UI */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+div[data-testid="stToolbar"] {
+    display: none !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# === SIDEBAR NAV ===
-# === NAV + RESPONSIVE SIDEBARS (REPLACE OLD SIDEBAR + CUSTOM HTML SIDEBAR) ===
-
-# --- session toggles ---
-if "left_sidebar_open" not in st.session_state:
-    st.session_state.left_sidebar_open = True
-
-if "right_panel_open" not in st.session_state:
-    st.session_state.right_panel_open = True
-
-# --- tiny header controls (work on mobile too) ---
-top_controls = st.container()
-with top_controls:
-    c1, c2, c3 = st.columns([1, 6, 1])
-    with c1:
-        if st.button("☰", key="toggle_left_sidebar"):
-            st.session_state.left_sidebar_open = not st.session_state.left_sidebar_open
-            st.rerun()
-    with c3:
-        if st.button("ℹ️", key="toggle_right_panel"):
-            st.session_state.right_panel_open = not st.session_state.right_panel_open
-            st.rerun()
-
-# --- LEFT SIDEBAR NAV (real Streamlit widgets) ---
-NAV_LABELS = [
-    '🧭 Career Test',
-    '👤 Profile',
-    '✅ Tasks',
-    '🏫 Universities',
-    '📅 Deadlines',
-    '📚 Preparation',
-    '💡 AI Advisor'
-]
-
-with st.sidebar:
-    st.title("Menu")
-    selected_tab = st.radio("Navigate", NAV_LABELS, label_visibility="collapsed")
-
-# --- CSS: collapsible left sidebar + responsive padding ---
-left_open = st.session_state.left_sidebar_open
-right_open = st.session_state.right_panel_open
-
-st.markdown(
-    f"""
-<style>
-/* Hide Streamlit default chrome */
-#MainMenu {{visibility: hidden;}}
-footer {{visibility: hidden;}}
-header {{visibility: hidden;}}
-div[data-testid="stToolbar"] {{display: none !important;}}
-
-/* Keep your fixed header space */
-.block-container {{
-    padding-top: 90px !important;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-}}
-
-/* Desktop layout: allow room for sidebar + right panel when open */
-@media (min-width: 900px) {{
-    .block-container {{
-        padding-left: {("260px" if left_open else "1rem")} !important;
-        padding-right: {("360px" if right_open else "1rem")} !important;
-    }}
-
-}}
-
-/* Streamlit sidebar animation (left) */
-section[data-testid="stSidebar"] {{
-    transition: transform 0.25s ease, width 0.25s ease;
-}}
-section[data-testid="stSidebar"] > div:first-child {{
-    width: 240px;
-}}
-{"section[data-testid='stSidebar']{transform: translateX(-110%);}" if not left_open else ""}
-
-/* On phones: sidebar becomes overlay — force it to behave and not trap the screen */
-@media (max-width: 899px) {{
-    section[data-testid="stSidebar"] > div:first-child {{
-        width: 80vw !important;
-        max-width: 320px !important;
-    }}
-}}
-</style>
-""",
-    unsafe_allow_html=True,
-)
-
-sidebar_class = "sidebar-open"
-
-
-panel_class = "panel-open" if st.session_state.get("right_panel_open", True) else "panel-closed"
-
-st.markdown(f"""
-<style>
-/* ===== RIGHT INFO PANEL ===== */
-.info-panel {{
+st.markdown("""
+<style>            
+/* ===== HEADER ===== */
+.app-header {
     position: fixed;
-    top: 64px; /* под твоим header */
+    top: 0;
+    left: 0;
     right: 0;
-    width: 340px;
-    height: calc(100vh - 64px);
-    background: #FFFFFF;
-    border-left: 1px solid #E5E7EB;
-    padding: 24px;
-    z-index: 950;
-    transition: transform 0.35s ease;
-    box-shadow: -20px 0 40px rgba(15,23,42,0.08);
-}}
+    height: 64px;
+    background: white;
+    border-bottom: 1px solid #E5E7EB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
 
-.panel-closed {{
-    transform: translateX(100%);
-}}
+.header-inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
 
-.panel-open {{
-    transform: translateX(0);
-}}
-/* ===== MOBILE FIX FOR RIGHT PANEL ===== */
-@media (max-width: 899px) {{
-  .info-panel {{
-    width: 92vw !important;
-    max-width: 360px !important;
-    padding: 16px !important;
-  }}
-}}st
-/* ===== PANEL SECTIONS ===== */
-.panel-section {{
-    margin-bottom: 22px;
-}}
+.header-logo {
+    height: 36px;
+}
 
-.panel-title {{
+.header-title {
+    font-size: 1.15rem;
     font-weight: 600;
+    color: #0F172A;
+}
+
+.hero {
+    text-align: center;
+    margin-top: 16px;
+    margin-bottom: 28px;
+}
+
+.hero-logo {
+    height: 68px;
+    margin-bottom: 10px;
+}
+
+.hero-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0F172A;
+}
+
+.hero-subtitle {
     font-size: 0.95rem;
     color: #0F172A;
-    margin-bottom: 8px;
-}}
-
-.panel-box {{
-    background: #F8FAFC;
-    border-radius: 14px;
-    padding: 14px;
-    font-size: 0.9rem;
-}}
-
-.panel-progress {{
-    width: 100%;
-    height: 8px;
-    background: #E2E8F0;
-    border-radius: 999px;
-    overflow: hidden;
-    margin-top: 8px;
-}}
-
-.panel-progress-bar {{
-    height: 100%;
-    background: linear-gradient(90deg, #3B82F6, #6366F1);
-    width: 0%;
-}}
+    margin-top: 6px;
+}
 </style>
 
-""", unsafe_allow_html=True)
-
-sidebar_profile = st.session_state.get("profile", {})
-gpa_value = sidebar_profile.get("gpa", "—")
-major_value = sidebar_profile.get("major", "—")
-total_tasks = len(st.session_state.get("tasks", []))
-done_tasks = sum(1 for t in st.session_state.get("tasks", []) if t.get("done"))
-progress_ratio = (done_tasks / total_tasks) if total_tasks else 0.0
-progress_percent = int(progress_ratio * 100)
-
-st.markdown(f"""
-<div class="info-panel {panel_class}">
-    <div class="panel-section">
-        <div class="panel-title">📌 Overview</div>
-        <div class="panel-box">
-            Intended major: {major_value}<br>
-            GPA: {gpa_value}
-            <div class="panel-progress">
-                <div class="panel-progress-bar" style="width: {progress_percent}%;"></div>
-            </div>
-            <div style="margin-top:6px;color:#64748B;font-size:0.8rem;">
-                Tasks: {done_tasks}/{total_tasks} done
-            </div>
-        </div>
-    </div>
-
-    <div class="panel-section">
-        <div class="panel-title">📄 Quick actions</div>
-        <div class="panel-box">
-            Export student profile as PDF
-        </div>
-    </div>
+<div class="app-header">
+  <div class="header-inner">
+    <img class="header-logo"
+         src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13">
+    <div class="header-title">College Planner</div>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
+panel_class = "panel-open" if st.session_state.get("info_panel_open", True) else "panel-closed"
 
 # ReportLab PDF support (optional)
 REPORTLAB_AVAILABLE = True
@@ -237,12 +109,6 @@ GROQ_MODEL = "llama-3.3-70b-versatile"
 # ---------------------------------------
 # Session state init (do this BEFORE using session_state)
 # ---------------------------------------
-if "info_panel_open" not in st.session_state:
-    st.session_state.info_panel_open = True
-
-if "sidebar_open" not in st.session_state:
-    st.session_state.sidebar_open = False
-
 if "holland_scores" not in st.session_state:
     st.session_state.holland_scores = None
 
@@ -298,7 +164,13 @@ for t in st.session_state.tasks:
         st.session_state.task_id_counter += 1
         t["id"] = st.session_state.task_id_counter
 
-
+# ---------------------------------------
+# Global page config & header
+# ---------------------------------------
+st.set_page_config(
+    page_title="Orken+ College Planner",
+    layout="wide",
+)
 
 # Nicely formatted PDF generator (placed before UI so sidebar can call it)
 def generate_export_pdf(export_payload: dict) -> bytes:
@@ -411,78 +283,22 @@ def generate_export_pdf(export_payload: dict) -> bytes:
     doc.build(story)
     return buf.getvalue()
 
-sidebar_profile = st.session_state.get("profile", {})
-gpa_value = sidebar_profile.get("gpa", "—")
-major_value = sidebar_profile.get("major", "—")
-total_tasks = len(st.session_state.get("tasks", []))
-done_tasks = sum(1 for t in st.session_state.get("tasks", []) if t.get("done"))
-progress_ratio = (done_tasks / total_tasks) if total_tasks else 0.0
-progress_percent = int(progress_ratio * 100)
-export_payload = {
-    "profile": st.session_state.get("profile", {}),
-    "tasks": st.session_state.get("tasks", []),
-    "favorites": st.session_state.get("uni_favorites", []),
-    "deadlines": st.session_state.get("deadlines", []),
-    "notes": st.session_state.get("uni_notes", {}),
-}
-if REPORTLAB_AVAILABLE:
-    try:
-        pdf_bytes_side = generate_export_pdf(export_payload)
-        pdf_b64 = base64.b64encode(pdf_bytes_side).decode("utf-8")
-        export_html = (
-            "<div class='panel-box'>"
-            '<a class="panel-download" '
-            'href="data:application/pdf;base64,'
-            + pdf_b64
-            + '" download="college_planner_export.pdf">'
-            "⬇️ Export as PDF</a>"
-            "</div>"
-        )
-    except Exception as e:
-        export_html = f"<div class='panel-box'>PDF export failed: {e}</div>"
-else:
-    export_html = (
-        "<div class='panel-box'>"
-        "PDF export unavailable — install 'reportlab' and redeploy."
-        "</div>"
-    )
-
-st.markdown(f"""
-<div class="info-panel {panel_class}">
-    <div class="panel-section">
-        <div class="panel-title">📌 Overview</div>
-        <div class="panel-box">
-            Intended major: {major_value}<br>
-            GPA: {gpa_value}
-            <div class="panel-progress">
-                <div class="panel-progress-bar" style="width: {progress_percent}%;"></div>
-            </div>
-            <div style="margin-top:6px;color:#64748B;font-size:0.8rem;">
-                Tasks: {done_tasks}/{total_tasks} done
-            </div>
-        </div>
-    </div>
-    <div class="panel-section">
-        <div class="panel-title">📄 Export</div>
-        {export_html}
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown(
-    """
-    <div class="hero">
-        <img class="hero-logo"
-             src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13"
-             alt="College Planner logo">
-        <div class="hero-title">College Planner</div>
-        <div class="hero-subtitle">
+with st.container():
+    left, right = st.columns([1, 5])
+    with left:
+        st.markdown("## 🎓")
+    with right:
+        st.markdown(
+            """
+            # College Planner  
+            <span style="font-size:14px;color:gray;">
             Track your profile, exams, universities, deadlines and chat with an AI advisor.
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+            </span>
+            """,
+            unsafe_allow_html=True,
+        )
+st.write("")  # small spacing
+
 
 # ---------------------------------------
 # Utility functions
@@ -739,7 +555,6 @@ You are an educational advisor. Using the student's profile, suggest:
 Student profile:
 - GPA: {gpa}
 - Intended major: {major}
-- Extracurricular strength: {extras}/5
 - Awards: {awards}
 - Exams: {exam_summary}
 
@@ -1186,10 +1001,20 @@ def calculate_holland_code():
 # ---------------------------------------
 # UI Layout: Tabs
 # -------
+tabs = st.tabs([
+    "🧭 Career Test",
+    "👤 Profile",
+    "✅ Tasks",
+    "🏫 Universities",
+    "📅 Deadlines",
+    "📚 Preparation",
+    "💡 AI Advisor",
+])
+
 # -------
 # Career Test Tab
 # -------
-if selected_tab == '🧭 Career Test':
+with tabs[0]:
     st.header("🧭 Holland Career Orientation Test")
     st.caption("Discover your career type using the Holland RIASEC model. Answer 60 questions in 6 blocks.")
     current_block = st.session_state.career_test_current_block
@@ -1260,7 +1085,7 @@ if selected_tab == '🧭 Career Test':
 # -------
 # Profile Tab (merged with Exams)
 # -------
-if selected_tab == '👤 Profile':
+with tabs[1]:
     st.header("🧭 Career Orientation")
     if st.session_state.holland_code:
         st.success(f"Holland Type: **{st.session_state.holland_code}**")
@@ -1313,11 +1138,6 @@ if selected_tab == '👤 Profile':
                 placeholder="Olympiad in math – national\nVolunteering – local community",
                 height=120,
             )
-            extras_level = st.select_slider(
-                "Extracurricular strength (0–5)",
-                options=[0, 1, 2, 3, 4, 5],
-                value=st.session_state.profile.get("extras_level", 0),
-            )
 
         save = st.form_submit_button("💾 Save profile")
 
@@ -1328,7 +1148,6 @@ if selected_tab == '👤 Profile':
                 "major": major.strip(),
                 "school": school.strip(),
                 "awards": [a.strip() for a in awards.splitlines() if a.strip()],
-                "extras_level": extras_level,
                 "updated": datetime.now().isoformat(),
             })
             st.success("Profile saved")
@@ -1418,7 +1237,7 @@ if selected_tab == '👤 Profile':
 # ---------------------------------------
 # Tasks Tab — Regional Kanban
 # ---------------------------------------
-if selected_tab == '✅ Tasks':
+with tabs[2]:
     st.header("✅ Tasks — Regional Board")
     st.caption("Organize tasks by region. Add custom regions and manage tasks (move, reorder, complete).")
 
@@ -1538,12 +1357,19 @@ if selected_tab == '✅ Tasks':
                                     st.session_state._edit_task = None
                                     st.rerun()
 
+# ---------------------------------------
+# Universities Tab
+# ---------------------------------------
+
+with tabs[3]:
+    st.header("Universities 🌍")
+    st.caption("Ищи университеты по названию или коду страны и сразу переходи на их сайт. Плюс — избранное и рандомный выбор.")
 
 # ---------------------------------------
 # Universities Tab
 # ---------------------------------------
 
-if selected_tab == '🏫 Universities':
+with tabs[3]:
     st.header("Universities 🌍")
     st.caption("Ищи университеты по названию или коду страны и сразу переходи на их сайт. Плюс — избранное и рандомный выбор.")
 
@@ -1653,7 +1479,7 @@ if selected_tab == '🏫 Universities':
 # ---------------------------------------
 # Deadlines & Dashboard Tab
 # ---------------------------------------
-if selected_tab == '📅 Deadlines':
+with tabs[4]:
     st.header("📅 Deadlines")
     st.caption("Track application, scholarship and other important dates.")
 
@@ -1777,13 +1603,15 @@ if selected_tab == '📅 Deadlines':
     # JSON import removed (PDF-only workflow)
 
 # --- NEW: Preparation Tab (fixed with proper with/expander structure) ---
-if selected_tab == '📚 Preparation':
+with tabs[5]:
     st.header("📚 Preparation Materials")
     st.caption("Resources, guides and practice materials for popular exams. Раскрой секции для деталей.")
 
     # Ensure session lists for user-added resources
     if "prep_user_resources" not in st.session_state:
         st.session_state.prep_user_resources = {"SAT": [], "IELTS": [], "TOEFL": [], "ACT": []}
+
+    prep_tabs = st.tabs(["SAT", "IELTS", "TOEFL", "ACT"])
 
     def render_resource_group(title, items):
         if items:
@@ -1792,7 +1620,6 @@ if selected_tab == '📚 Preparation':
                 st.markdown(f"- {it}")
 
     # SAT tab
-    prep_tabs = st.tabs(["SAT", "IELTS", "TOEFL", "ACT"])
     with prep_tabs[0]:
         with st.expander("About SAT — формат и что важно знать", expanded=False):
             st.write(
@@ -1967,7 +1794,7 @@ if selected_tab == '📚 Preparation':
 # ---------------------------------------
 # AI Advisor Tab
 # ---------------------------------------
-if selected_tab == '💡 AI Advisor':
+with tabs[6]:
     st.header("💡 AI Advisor — персональные советы")
     st.caption("Задай вопрос по профориентации, выбору вуза или подготовке к экзаменам.")
 
@@ -2049,6 +1876,3 @@ if selected_tab == '💡 AI Advisor':
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
-
-
-
