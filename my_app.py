@@ -9,9 +9,6 @@ import os
 import requests
 import socket
 import io
-from dotenv import load_dotenv
-
-load_dotenv(override=True)
 
 # Modern, vivid styling with mobile responsiveness
 st.markdown("""
@@ -2083,3 +2080,4 @@ with tabs[5]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
+
