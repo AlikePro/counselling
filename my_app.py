@@ -9,6 +9,9 @@ import os
 import requests
 import socket
 import io
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 # Modern, vivid styling with mobile responsiveness
 st.markdown("""
@@ -630,66 +633,6 @@ def generate_export_pdf(export_payload: dict) -> bytes:
 
     doc.build(story)
     return buf.getvalue()
-
-# ---------------------------------------
-# Sidebar: Import / Export
-# ---------------------------------------
-with st.sidebar:
-    st.markdown("### 📁 Import / Export")
-    
-    # Export JSON
-    if st.button("📥 Export JSON", key="sidebar_export_json", use_container_width=True):
-        export_payload = {
-            "profile": st.session_state.profile,
-            "tasks": st.session_state.tasks,
-            "task_regions": st.session_state.task_regions,
-            "uni_favorites": st.session_state.uni_favorites,
-            "uni_notes": st.session_state.uni_notes,
-            "deadlines": st.session_state.deadlines,
-            "holland_scores": st.session_state.holland_scores,
-            "holland_code": st.session_state.holland_code,
-        }
-        json_str = json.dumps(export_payload, ensure_ascii=False, indent=2)
-        b64 = base64.b64encode(json_str.encode("utf-8")).decode()
-        href = f'<a href="data:application/json;base64,{b64}" download="college_planner.json">📥 Download JSON</a>'
-        st.markdown(href, unsafe_allow_html=True)
-
-    # Export PDF
-    if REPORTLAB_AVAILABLE:
-        if st.button("📄 Export PDF", key="sidebar_export_pdf", use_container_width=True):
-            export_payload = {
-                "profile": st.session_state.profile,
-                "tasks": st.session_state.tasks,
-                "uni_favorites": st.session_state.uni_favorites,
-                "deadlines": st.session_state.deadlines,
-            }
-            pdf_bytes = generate_export_pdf(export_payload)
-            b64 = base64.b64encode(pdf_bytes).decode()
-            href = f'<a href="data:application/pdf;base64,{b64}" download="college_planner.pdf">📄 Download PDF</a>'
-            st.markdown(href, unsafe_allow_html=True)
-
-    # Import JSON
-    st.markdown("---")
-    st.markdown("**Import data:**")
-    uploaded = st.file_uploader("Choose JSON", type=["json"], key="sidebar_uploader")
-    if uploaded:
-        try:
-            data = json.load(uploaded)
-            st.session_state.profile = data.get("profile", {})
-            st.session_state.tasks = data.get("tasks", [])
-            st.session_state.task_regions = data.get("task_regions", ["Canada", "USA", "Europe", "Asia"])
-            st.session_state.uni_favorites = data.get("uni_favorites", [])
-            st.session_state.uni_notes = data.get("uni_notes", {})
-            st.session_state.deadlines = data.get("deadlines", [])
-            st.session_state.holland_scores = data.get("holland_scores")
-            st.session_state.holland_code = data.get("holland_code")
-            st.success("✅ Data imported successfully!")
-            st.rerun()
-        except Exception as e:
-            st.error(f"❌ Error importing: {e}")
-
-# Add spacing for fixed header
-st.markdown("<div style='margin-top: 80px;'></div>", unsafe_allow_html=True)
 
 # Hero section with modern design
 st.markdown("""
@@ -2140,4 +2083,3 @@ with tabs[5]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
-
