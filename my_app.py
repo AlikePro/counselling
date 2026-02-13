@@ -9,6 +9,11 @@ import os
 import requests
 import socket
 import io
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
+
+# Modern, vivid styling with mobile responsiveness
 st.markdown("""
 <style>
 /* Hide Streamlit default UI */
@@ -18,63 +23,409 @@ header {visibility: hidden;}
 div[data-testid="stToolbar"] {
     display: none !important;
 }
-</style>
-""", unsafe_allow_html=True)
 
-st.markdown("""
-<style>            
-/* ===== HEADER ===== */
+/* Global styles */
+:root {
+    --primary: #10b981;
+    --primary-dark: #059669;
+    --secondary: #34d399;
+    --accent: #6ee7b7;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --bg-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Modern Header with gradient */
 .app-header {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 64px;
-    background: white;
-    border-bottom: 1px solid #E5E7EB;
+    height: 70px;
+    background: var(--bg-gradient);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
+    backdrop-filter: blur(10px);
 }
 
 .header-inner {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
+    padding: 0 20px;
 }
 
 .header-logo {
-    height: 36px;
+    height: 42px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .header-title {
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: #0F172A;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    letter-spacing: -0.5px;
 }
 
+/* Hero section */
 .hero {
     text-align: center;
-    margin-top: 16px;
-    margin-bottom: 28px;
+    margin-top: 24px;
+    margin-bottom: 36px;
+    padding: 0 20px;
 }
 
 .hero-logo {
-    height: 68px;
-    margin-bottom: 10px;
+    height: 80px;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
 }
 
 .hero-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #0F172A;
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: var(--bg-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
 }
 
 .hero-subtitle {
-    font-size: 0.95rem;
-    color: #0F172A;
-    margin-top: 6px;
+    font-size: 1.1rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Card styling */
+.stTabs [data-baseweb="tab-panel"] {
+    padding: 24px 16px;
+}
+
+div[data-testid="stExpander"] {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+}
+
+div[data-testid="stExpander"]:hover {
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-2px);
+}
+
+/* Modern buttons */
+.stButton > button {
+    background: var(--bg-gradient);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-weight: 600;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.stButton > button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.4);
+}
+
+.stButton > button:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+.stButton > button:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* Modern tabs */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+    background: #f8fafc;
+    padding: 8px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.stTabs [data-baseweb="tab"] {
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.stTabs [aria-selected="true"] {
+    background: var(--bg-gradient);
+    color: white !important;
+}
+
+/* Input fields */
+.stTextInput > div > div > input,
+.stSelectbox > div > div > select,
+.stNumberInput > div > div > input,
+.stTextArea > div > div > textarea,
+.stDateInput > div > div > input {
+    border-radius: 8px;
+    border: 2px solid #d1d5db !important;
+    background: white !important;
+    transition: all 0.3s ease;
+}
+
+.stTextInput > div > div > input:focus,
+.stSelectbox > div > div > select:focus,
+.stNumberInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus,
+.stDateInput > div > div > input:focus {
+    border-color: #9ca3af !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    background: white !important;
+}
+
+/* Additional selectbox styling */
+.stSelectbox [data-baseweb="select"] > div {
+    border: 2px solid #d1d5db !important;
+    border-radius: 8px;
+    background: white !important;
+}
+
+.stSelectbox [data-baseweb="select"]:focus-within > div {
+    border-color: #9ca3af !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    background: white !important;
+}
+
+/* Checkbox styling */
+.stCheckbox {
+    background: white !important;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid #d1d5db;
+}
+
+.stCheckbox:hover {
+    border-color: #9ca3af;
+}
+
+/* Radio buttons */
+.stRadio {
+    background: white !important;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid #d1d5db;
+}
+
+.stRadio:hover {
+    border-color: #9ca3af;
+}
+
+/* Subheaders with white background */
+h1, h2, h3, h4, h5, h6 {
+    background: white !important;
+    padding: 16px !important;
+    border-radius: 8px !important;
+    margin-bottom: 16px !important;
+}
+
+[data-testid="stMarkdownContainer"] h1,
+[data-testid="stMarkdownContainer"] h2,
+[data-testid="stMarkdownContainer"] h3 {
+    background: white !important;
+    padding: 16px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Metrics */
+div[data-testid="stMetricValue"] {
+    font-size: 2rem;
+    font-weight: 700;
+    background: var(--bg-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Success/Warning/Error messages */
+.stSuccess, .stWarning, .stError, .stInfo {
+    border-radius: 8px;
+    padding: 16px;
+    border-left: 4px solid;
+}
+
+.stSuccess {
+    background: #f0fdf4;
+    border-color: var(--success);
+}
+
+.stWarning {
+    background: #fffbeb;
+    border-color: var(--warning);
+}
+
+.stError {
+    background: #fef2f2;
+    border-color: var(--danger);
+}
+
+.stInfo {
+    background: #eff6ff;
+    border-color: var(--primary);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .app-header {
+        height: 60px;
+    }
+    
+    .header-title {
+        font-size: 1.1rem;
+    }
+    
+    .header-logo {
+        height: 36px;
+    }
+    
+    .hero-title {
+        font-size: 1.8rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 0.95rem;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+    }
+    
+    div[data-testid="stExpander"] {
+        margin-bottom: 12px;
+    }
+}
+
+/* Sidebar styling */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #f0fdf4 0%, #d1fae5 100%);
+    border-right: 1px solid #e2e8f0;
+}
+
+section[data-testid="stSidebar"] .stButton > button {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+/* Chat messages */
+div[data-testid="stChatMessage"] {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--card-shadow);
+}
+
+div[data-testid="stChatMessage"][data-testid*="user"] {
+    background: linear-gradient(135deg, #d1fae515 0%, #a7f3d015 100%);
+    border-left: 4px solid var(--primary);
+}
+
+/* Progress bars */
+.stProgress > div > div > div {
+    background: var(--bg-gradient);
+}
+
+/* Resource links */
+a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+/* Columns on mobile */
+@media (max-width: 768px) {
+    div[data-testid="column"] {
+        min-width: 100% !important;
+        margin-bottom: 16px;
+    }
+}
+
+/* Dataframe styling */
+.dataframe {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+}
+
+.dataframe thead tr th {
+    background: var(--bg-gradient);
+    color: white;
+    font-weight: 600;
+}
+
+/* Slider styling */
+.stSlider [data-baseweb="slider"] {
+    background: #d1d5db;
+}
+
+.stSlider [role="slider"] {
+    background: var(--primary) !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.stSlider [data-baseweb="slider-track"] {
+    background: var(--bg-gradient) !important;
+}
+
+/* Checkbox and radio styling */
+.stCheckbox, .stRadio {
+    padding: 8px;
+}
+
+/* File uploader */
+div[data-testid="stFileUploader"] {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 24px;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+div[data-testid="stFileUploader"]:hover {
+    border-color: var(--primary);
+    background: #f0fdf4;
 }
 </style>
 
@@ -82,7 +433,7 @@ st.markdown("""
   <div class="header-inner">
     <img class="header-logo"
          src="https://avatars.mds.yandex.net/i?id=e78477e103c7040b0e7b81a3b99954790e332c98-5895977-images-thumbs&n=13">
-    <div class="header-title">College Planner</div>
+    <div class="header-title">🎓 College Planner</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -205,208 +556,152 @@ def generate_export_pdf(export_payload: dict) -> bytes:
     if awards:
         story.append(Paragraph("Honors / Activities:", normal))
         numbered = ListFlowable([
-            ListItem(Paragraph(str(item), normal), value=i+1) for i, item in enumerate(awards)
-        ], bulletType="1", start="1")
+            ListItem(Paragraph(x, normal), value="circle")
+            for x in awards
+        ], bulletType="bullet")
         story.append(numbered)
-    else:
-        story.append(Paragraph("Honors / Activities: None", normal))
-    story.append(Spacer(1, 12))
 
     # Exams
     exams = profile.get("exams", {})
-    story.append(Paragraph("Exams & Scores", heading))
     if exams:
-        for i, (ename, edata) in enumerate(exams.items(), 1):
-            parts = [f"{ename} — {edata.get('status', 'N/A')}"]
-            if edata.get("score"):
-                parts.append(f"score: {edata.get('score')}")
-            if edata.get("expected"):
-                parts.append(f"expected: {edata.get('expected')}")
-            if edata.get("date"):
-                parts.append(f"date: {edata.get('date')}")
-            if edata.get("planned_date"):
-                parts.append(f"planned: {edata.get('planned_date')}")
-            story.append(Paragraph(f"{i}. " + "; ".join(parts), normal))
-    else:
-        story.append(Paragraph("No exam data", normal))
-    story.append(Spacer(1, 12))
+        story.append(Spacer(1, 6))
+        story.append(Paragraph("Exams:", normal))
+        for exam, info in exams.items():
+            status = info.get("status", "—")
+            score = info.get("score", "—")
+            target = info.get("target_score", "—")
+            line = f"<b>{exam}:</b> status={status}, score={score}, target={target}"
+            story.append(Paragraph(line, normal))
 
-    # Tasks
-    story.append(Paragraph("Tasks", heading))
-    tasks = export_payload.get("tasks", [])
-    if tasks:
-        numbered_tasks = ListFlowable([
-            ListItem(Paragraph(f"{t.get('title')} — due: {t.get('due')} — done: {t.get('done')}", normal))
-            for t in tasks
-        ], bulletType="1", start="1")
-        story.append(numbered_tasks)
-    else:
-        story.append(Paragraph("No tasks", normal))
     story.append(Spacer(1, 12))
 
     # Favorites
-    story.append(Paragraph("Favorites", heading))
-    favs = export_payload.get("favorites", [])
+    favs = export_payload.get("uni_favorites", [])
     if favs:
-        for f in favs:
-            story.append(Paragraph(f"- {f.get('name')} ({f.get('country_code','')}) — {f.get('url')}", normal))
-    else:
-        story.append(Paragraph("No favorites", normal))
-    story.append(Spacer(1, 12))
+        story.append(Paragraph("Favorite universities", heading))
+        favs_list = ListFlowable([
+            ListItem(Paragraph(f, normal), value="circle")
+            for f in favs
+        ], bulletType="bullet")
+        story.append(favs_list)
+        story.append(Spacer(1, 8))
 
-    # Deadlines as table
-    story.append(Paragraph("Deadlines", heading))
+    # Deadlines
     dls = export_payload.get("deadlines", [])
     if dls:
+        story.append(Paragraph("Deadlines", heading))
         table_data = [["University", "Type", "Date", "Note"]]
         for d in dls:
-            table_data.append([d.get("uni", ""), d.get("type", ""), d.get("date", ""), d.get("note", "")])
-        tbl = Table(table_data, colWidths=[150, 120, 80, 180])
-        tbl.setStyle(TableStyle([
-            ("GRID", (0,0), (-1,-1), 0.5, colors.grey),
-            ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
+            table_data.append([
+                d.get("uni", ""),
+                d.get("type", ""),
+                str(d.get("date", "")),
+                d.get("note", "")
+            ])
+        t = Table(table_data, colWidths=[130, 80, 80, 160])
+        t.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#667eea")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
+            ("GRID", (0, 0), (-1, -1), 1, colors.grey),
         ]))
-        story.append(tbl)
-    else:
-        story.append(Paragraph("No deadlines", normal))
-    story.append(Spacer(1, 12))
+        story.append(t)
+        story.append(Spacer(1, 8))
 
-    # Notes
-    story.append(Paragraph("Notes", heading))
-    notes = export_payload.get("notes", {})
-    if notes:
-        for uni, note in notes.items():
-            story.append(Paragraph(f"- {uni}: {note}", normal))
-    else:
-        story.append(Paragraph("No notes", normal))
+    # Tasks
+    tsks = export_payload.get("tasks", [])
+    if tsks:
+        story.append(Paragraph("Tasks", heading))
+        table_data = [["Task", "Region", "Status", "Due"]]
+        for tk in tsks:
+            table_data.append([
+                tk.get("text", ""),
+                tk.get("region", ""),
+                "✓" if tk.get("done") else "—",
+                str(tk.get("deadline", ""))
+            ])
+        t = Table(table_data, colWidths=[180, 80, 50, 90])
+        t.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#667eea")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
+            ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+        ]))
+        story.append(t)
 
     doc.build(story)
     return buf.getvalue()
 
-with st.container():
-    left, right = st.columns([1, 5])
-    with left:
-        st.markdown("## 🎓")
-    with right:
-        st.markdown(
-            """
-            # College Planner  
-            <span style="font-size:14px;color:gray;">
-            Track your profile, exams, universities, deadlines and chat with an AI advisor.
-            </span>
-            """,
-            unsafe_allow_html=True,
-        )
-st.write("")  # small spacing
-
-
 # ---------------------------------------
-# Utility functions
+# Sidebar: Import / Export
 # ---------------------------------------
-def _try_extract_assistant_text(data):
-    """Robust extraction of assistant text from various provider responses."""
-    try:
-        if isinstance(data, dict):
-            choices = data.get("choices")
-            if choices and isinstance(choices, list) and len(choices) > 0:
-                msg = choices[0].get("message") or choices[0]
-                if isinstance(msg, dict):
-                    if "content" in msg:
-                        return msg["content"]
-                    if "text" in msg:
-                        return msg["text"]
-            if "output" in data:
-                return str(data["output"])
-            if "text" in data:
-                return data["text"]
-    except Exception:
-        pass
-    try:
-        return json.dumps(data, ensure_ascii=False)
-    except Exception:
-        return str(data)
+with st.sidebar:
+    st.markdown("### 📁 Import / Export")
+    
+    # Export JSON
+    if st.button("📥 Export JSON", key="sidebar_export_json", use_container_width=True):
+        export_payload = {
+            "profile": st.session_state.profile,
+            "tasks": st.session_state.tasks,
+            "task_regions": st.session_state.task_regions,
+            "uni_favorites": st.session_state.uni_favorites,
+            "uni_notes": st.session_state.uni_notes,
+            "deadlines": st.session_state.deadlines,
+            "holland_scores": st.session_state.holland_scores,
+            "holland_code": st.session_state.holland_code,
+        }
+        json_str = json.dumps(export_payload, ensure_ascii=False, indent=2)
+        b64 = base64.b64encode(json_str.encode("utf-8")).decode()
+        href = f'<a href="data:application/json;base64,{b64}" download="college_planner.json">📥 Download JSON</a>'
+        st.markdown(href, unsafe_allow_html=True)
 
+    # Export PDF
+    if REPORTLAB_AVAILABLE:
+        if st.button("📄 Export PDF", key="sidebar_export_pdf", use_container_width=True):
+            export_payload = {
+                "profile": st.session_state.profile,
+                "tasks": st.session_state.tasks,
+                "uni_favorites": st.session_state.uni_favorites,
+                "deadlines": st.session_state.deadlines,
+            }
+            pdf_bytes = generate_export_pdf(export_payload)
+            b64 = base64.b64encode(pdf_bytes).decode()
+            href = f'<a href="data:application/pdf;base64,{b64}" download="college_planner.pdf">📄 Download PDF</a>'
+            st.markdown(href, unsafe_allow_html=True)
 
-def _groq_post_with_auth_variants(api_url, key, body, timeout=50):
-    """Try multiple auth header variants for GROQ; return (status_code, text, parsed_json_or_None)."""
-    variants = [
-        {"Authorization": f"Bearer {key}"},
-        {"X-API-Key": key},
-        {"Cookie": f"session={key}"},
-        {"X-API-Key": key, "Cookie": f"session={key}"},
-        {"Authorization": f"Bearer {key}", "Cookie": f"session={key}"},
-    ]
-
-    last_status = None
-    last_text = None
-    for hdrs in variants:
-        headers = hdrs.copy()
-        headers.setdefault("Content-Type", "application/json")
+    # Import JSON
+    st.markdown("---")
+    st.markdown("**Import data:**")
+    uploaded = st.file_uploader("Choose JSON", type=["json"], key="sidebar_uploader")
+    if uploaded:
         try:
-            r = requests.post(api_url, headers=headers, json=body, timeout=timeout)
+            data = json.load(uploaded)
+            st.session_state.profile = data.get("profile", {})
+            st.session_state.tasks = data.get("tasks", [])
+            st.session_state.task_regions = data.get("task_regions", ["Canada", "USA", "Europe", "Asia"])
+            st.session_state.uni_favorites = data.get("uni_favorites", [])
+            st.session_state.uni_notes = data.get("uni_notes", {})
+            st.session_state.deadlines = data.get("deadlines", [])
+            st.session_state.holland_scores = data.get("holland_scores")
+            st.session_state.holland_code = data.get("holland_code")
+            st.success("✅ Data imported successfully!")
+            st.rerun()
         except Exception as e:
-            cause = getattr(e, "__cause__", None)
-            txt = str(e)
-            if isinstance(cause, socket.gaierror) or "getaddrinfo" in txt.lower():
-                return None, f"Network/DNS error: {txt}", None
-            last_status = None
-            last_text = f"Request error: {txt}"
-            continue
-        last_status = r.status_code
-        last_text = r.text or ""
-        if r.status_code == 200:
-            try:
-                return 200, r.text, r.json()
-            except Exception:
-                return 200, r.text, None
-        if r.status_code == 401:
-            continue
-        try:
-            return r.status_code, r.text, r.json()
-        except Exception:
-            return r.status_code, r.text, None
-    return last_status, last_text, None
+            st.error(f"❌ Error importing: {e}")
 
+# Add spacing for fixed header
+st.markdown("<div style='margin-top: 80px;'></div>", unsafe_allow_html=True)
 
-def groq_post_with_auth_variants_sync(api_url, key, body, timeout=50):
-    """Sync version of auth-variant POST for GROQ. Returns (status, text, parsed_json_or_None)."""
-    variants = [
-        {"Authorization": f"Bearer {key}"},
-        {"X-API-Key": key},
-        {"Cookie": f"session={key}"},
-        {"X-API-Key": key, "Cookie": f"session={key}"},
-        {"Authorization": f"Bearer {key}", "Cookie": f"session={key}"},
-    ]
-    last_status = None
-    last_text = None
-    for hdrs in variants:
-        headers = hdrs.copy()
-        headers.setdefault("Content-Type", "application/json")
-        try:
-            r = requests.post(api_url, headers=headers, json=body, timeout=timeout)
-        except Exception as e:
-            cause = getattr(e, "__cause__", None)
-            txt = str(e)
-            if isinstance(cause, socket.gaierror) or "getaddrinfo" in txt.lower():
-                return None, f"Network/DNS error: {txt}", None
-            last_status = None
-            last_text = f"Request error: {txt}"
-            continue
-        last_status = r.status_code
-        last_text = r.text or ""
-        if r.status_code == 200:
-            try:
-                return 200, r.text, r.json()
-            except Exception:
-                return 200, r.text, None
-        if r.status_code == 401:
-            continue
-        try:
-            return r.status_code, r.text, r.json()
-        except Exception:
-            return r.status_code, r.text, None
-    return last_status, last_text, None
+# Hero section with modern design
+st.markdown("""
+<div class="hero">
 
+  <div class="hero-title">Welcome to College Planner</div>
+  <div class="hero-subtitle">Your personal assistant for university admissions 🚀</div>
+</div>
+""", unsafe_allow_html=True)
 
 def generate_export_pdf(export_payload: dict) -> bytes:
     """Generate a nicely formatted PDF (bytes) containing full export payload."""
@@ -518,6 +813,58 @@ def generate_export_pdf(export_payload: dict) -> bytes:
     doc.build(story)
     return buf.getvalue()
 
+def _try_extract_assistant_text(data: dict) -> str:
+    """Extract assistant text from API response data."""
+    try:
+        if isinstance(data, dict) and "choices" in data:
+            choices = data.get("choices", [])
+            if choices and len(choices) > 0:
+                msg = choices[0].get("message", {})
+                return msg.get("content", "No response content")
+        return str(data)
+    except Exception as e:
+        return f"Error parsing response: {e}"
+
+
+def _groq_post_with_auth_variants(api_url, key, body, timeout=50):
+    """Try multiple auth header variants for GROQ; return (status_code, text, parsed_json_or_None)."""
+    variants = [
+        {"Authorization": f"Bearer {key}"},
+        {"X-API-Key": key},
+        {"Cookie": f"session={key}"},
+        {"X-API-Key": key, "Cookie": f"session={key}"},
+        {"Authorization": f"Bearer {key}", "Cookie": f"session={key}"},
+    ]
+
+    last_status = None
+    last_text = None
+    for hdrs in variants:
+        headers = hdrs.copy()
+        headers.setdefault("Content-Type", "application/json")
+        try:
+            r = requests.post(api_url, headers=headers, json=body, timeout=timeout)
+        except Exception as e:
+            cause = getattr(e, "__cause__", None)
+            txt = str(e)
+            if isinstance(cause, socket.gaierror) or "getaddrinfo" in txt.lower():
+                return None, f"Network/DNS error: {txt}", None
+            last_status = None
+            last_text = f"Request error: {txt}"
+            continue
+        last_status = r.status_code
+        last_text = r.text or ""
+        if r.status_code == 200:
+            try:
+                return 200, r.text, r.json()
+            except Exception:
+                return 200, r.text, None
+        if r.status_code == 401:
+            continue
+        try:
+            return r.status_code, r.text, r.json()
+        except Exception:
+            return r.status_code, r.text, None
+    return last_status, last_text, None
 
 async def get_ai_advice(profile: dict) -> str:
     """Call LLM provider (GROQ) for personalized advice."""
@@ -1002,7 +1349,6 @@ def calculate_holland_code():
 # UI Layout: Tabs
 # -------
 tabs = st.tabs([
-    "🧭 Career Test",
     "👤 Profile",
     "✅ Tasks",
     "🏫 Universities",
@@ -1012,97 +1358,10 @@ tabs = st.tabs([
 ])
 
 # -------
-# Career Test Tab
-# -------
-with tabs[0]:
-    st.header("🧭 Holland Career Orientation Test")
-    st.caption("Discover your career type using the Holland RIASEC model. Answer 60 questions in 6 blocks.")
-    current_block = st.session_state.career_test_current_block
-    holland_types = {"R": "Realistic", "I": "Investigative", "A": "Artistic", "S": "Social", "E": "Enterprising", "C": "Conventional"}
-    all_blocks = list(HOLLAND_QUESTIONS.keys())
-    if current_block < len(all_blocks):
-        block_letter = all_blocks[current_block]
-        block_type = holland_types[block_letter]
-        st.subheader(f"Step {current_block + 1} of {len(all_blocks)}: {block_letter} - {block_type} Type")
-        st.caption(f"Rate each statement from 1 (Not me at all) to 5 (Very much me)")
-        st.progress((current_block + 1) / len(all_blocks))
-        questions = HOLLAND_QUESTIONS[block_letter]
-        st.markdown("---")
-        for q_idx, question in enumerate(questions):
-            q_key = f"{block_letter}_{q_idx}"
-            current_answer = st.session_state.career_test_answers.get(q_key, 3)
-            st.session_state.career_test_answers[q_key] = st.select_slider(
-                f"{q_idx + 1}. {question}",
-                options=[1, 2, 3, 4, 5],
-                value=current_answer,
-                format_func=lambda x: {1: "1: Not me", 2: "2: Slightly not", 3: "3: Neutral", 4: "4: Somewhat", 5: "5: Very much"}[x],
-                key=q_key,
-            )
-        st.markdown("---")
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col1:
-            if current_block > 0 and st.button("← Previous Block"):
-                st.session_state.career_test_current_block -= 1
-                st.rerun()
-        with col3:
-            if current_block < len(all_blocks) - 1:
-                if st.button("Next Block →"):
-                    st.session_state.career_test_current_block += 1
-                    st.rerun()
-            else:
-                if st.button("🎯 Complete Test"):
-                    calculate_holland_code()
-                    st.session_state.career_test_current_block = len(all_blocks)
-                    st.rerun()
-    else:
-        st.success("✅ Career test completed!")
-        if st.session_state.holland_code and st.session_state.holland_scores:
-            st.markdown(f"### Your Holland Code: **{st.session_state.holland_code}**")
-            st.markdown("#### Your RIASEC Scores:")
-            scores_data = [{"Type": f"{letter} - {holland_types[letter]}", "Score": st.session_state.holland_scores.get(letter, 0)} for letter in "RIASEC"]
-            scores_df = pd.DataFrame(scores_data)
-            st.dataframe(scores_df, use_container_width=True)
-            st.markdown("#### What does this mean?")
-            code_letters = st.session_state.holland_code.split("-")
-            explanations = {
-                "R": "**Realistic** - You prefer practical, hands-on work with tools, machines, or nature.",
-                "I": "**Investigative** - You prefer analytical, scientific, and research-oriented work.",
-                "A": "**Artistic** - You prefer creative, unstructured work that allows self-expression.",
-                "S": "**Social** - You prefer helping, teaching, and working with people.",
-                "E": "**Enterprising** - You prefer leading, persuading, and business-oriented activities.",
-                "C": "**Conventional** - You prefer structured, organized work with clear procedures and data.",
-            }
-            for i, letter in enumerate(code_letters, 1):
-                st.write(f"{i}. {explanations.get(letter, '')}")
-            st.markdown("---")
-            if st.button("🔄 Retake Test"):
-                st.session_state.career_test_current_block = 0
-                st.session_state.career_test_answers = {}
-                st.session_state.holland_code = None
-                st.session_state.holland_scores = None
-                st.rerun()
-
 # -------
 # Profile Tab (merged with Exams)
 # -------
-with tabs[1]:
-    st.header("🧭 Career Orientation")
-    if st.session_state.holland_code:
-        st.success(f"Holland Type: **{st.session_state.holland_code}**")
-        explanations = {
-            "R": "Realistic - Practical, hands-on work",
-            "I": "Investigative - Analytical, research work",
-            "A": "Artistic - Creative, expressive work",
-            "S": "Social - Helping, teaching, people-oriented work",
-            "E": "Enterprising - Leading, business-oriented work",
-            "C": "Conventional - Structured, organized work",
-        }
-        for letter in st.session_state.holland_code.split("-"):
-            st.write(f"**{letter}:** {explanations.get(letter, '')}")
-    else:
-        st.info("Career test not completed yet. Visit the 🧭 Career Test tab to discover your Holland type.")
-    
-    st.markdown("---")
+with tabs[0]:
     st.header("👤 Profile")
     st.caption("We'll use this to estimate chances and personalize AI advice.")
 
@@ -1237,7 +1496,7 @@ with tabs[1]:
 # ---------------------------------------
 # Tasks Tab — Regional Kanban
 # ---------------------------------------
-with tabs[2]:
+with tabs[1]:
     st.header("✅ Tasks — Regional Board")
     st.caption("Organize tasks by region. Add custom regions and manage tasks (move, reorder, complete).")
 
@@ -1361,15 +1620,8 @@ with tabs[2]:
 # Universities Tab
 # ---------------------------------------
 
-with tabs[3]:
-    st.header("Universities 🌍")
-    st.caption("Ищи университеты по названию или коду страны и сразу переходи на их сайт. Плюс — избранное и рандомный выбор.")
 
-# ---------------------------------------
-# Universities Tab
-# ---------------------------------------
-
-with tabs[3]:
+with tabs[2]:
     st.header("Universities 🌍")
     st.caption("Ищи университеты по названию или коду страны и сразу переходи на их сайт. Плюс — избранное и рандомный выбор.")
 
@@ -1479,7 +1731,7 @@ with tabs[3]:
 # ---------------------------------------
 # Deadlines & Dashboard Tab
 # ---------------------------------------
-with tabs[4]:
+with tabs[3]:
     st.header("📅 Deadlines")
     st.caption("Track application, scholarship and other important dates.")
 
@@ -1548,25 +1800,6 @@ with tabs[4]:
                 st.write(f"- {f.get('name')} ({f.get('country_code','')})")
         else:
             st.write("No favorites yet.")
-    with col3:
-        st.subheader("Estimated chances (favorites)")
-        rows = []
-        for fav in st.session_state.uni_favorites:
-            uni_row = None
-            if universities_df is not None:
-                name_col_main2 = ensure_name_column(universities_df)
-                matches = universities_df[
-                    universities_df[name_col_main2].astype(str).str.lower()
-                    == str(fav.get("name", "")).lower()
-                ]
-                if not matches.empty:
-                    uni_row = matches.iloc[0].to_dict()
-            rows.append({"uni": fav.get("name"), "score": score})
-        if rows:
-            df_scores = pd.DataFrame(rows).set_index("uni")
-            st.table(df_scores)
-        else:
-            st.write("No favorites to evaluate.")
 
     st.markdown("---")
     export_payload_full = {
@@ -1603,7 +1836,7 @@ with tabs[4]:
     # JSON import removed (PDF-only workflow)
 
 # --- NEW: Preparation Tab (fixed with proper with/expander structure) ---
-with tabs[5]:
+with tabs[4]:
     st.header("📚 Preparation Materials")
     st.caption("Resources, guides and practice materials for popular exams. Раскрой секции для деталей.")
 
@@ -1794,9 +2027,25 @@ with tabs[5]:
 # ---------------------------------------
 # AI Advisor Tab
 # ---------------------------------------
-with tabs[6]:
+with tabs[5]:
     st.header("💡 AI Advisor — персональные советы")
     st.caption("Задай вопрос по профориентации, выбору вуза или подготовке к экзаменам.")
+
+    # Check if API key is configured
+    if not GROQ_API_KEY or GROQ_API_KEY == "":
+        st.error("""
+        ⚠️ **Groq API ключ не настроен!**
+        
+        Чтобы использовать AI Advisor:
+        1. Получить бесплатный API ключ на [console.groq.com](https://console.groq.com/keys)
+        2. Добавить в файл `.env` (в той же папке с my_app.py):
+           ```
+           GROQ_API_KEY=gsk_your_key_here
+           ```
+        3. Убедиться что установлен python-dotenv: `pip install python-dotenv`
+        4. Перезапустить приложение
+        """)
+        st.stop()
 
     profile = st.session_state.profile
     if not profile.get("gpa"):
@@ -1812,7 +2061,6 @@ with tabs[6]:
         st.markdown("### 📋 Твой профиль")
         st.metric("GPA", profile.get("gpa", "—"))
         st.metric("Специальность", profile.get("major", "—"))
-        st.metric("Активности (0–5)", profile.get("extras_level", "—"))
 
         exams = profile.get("exams", {})
         passed = len([x for x in exams.values() if x.get("status") == "Already taken"])
@@ -1867,10 +2115,29 @@ with tabs[6]:
                         },
                         timeout=30,
                     )
-                data = response.json()
-                ai_text = data["choices"][0]["message"]["content"]
+                    
+                    # Check response status
+                    if response.status_code != 200:
+                        ai_text = f"❌ Ошибка API (код {response.status_code}): {response.text[:300]}"
+                    else:
+                        data = response.json()
+                        
+                        # Check if response has expected structure
+                        if "choices" in data and len(data["choices"]) > 0:
+                            ai_text = data["choices"][0]["message"]["content"]
+                        elif "error" in data:
+                            ai_text = f"❌ Ошибка API: {data['error'].get('message', 'Неизвестная ошибка')}"
+                        else:
+                            ai_text = f"❌ Неожиданный формат ответа API. Ответ: {str(data)[:300]}"
+                            
+            except requests.exceptions.Timeout:
+                ai_text = "❌ Превышено время ожидания ответа от API. Попробуйте снова."
+            except requests.exceptions.RequestException as e:
+                ai_text = f"❌ Ошибка соединения с API: {str(e)}"
+            except KeyError as e:
+                ai_text = f"❌ Ошибка обработки ответа API: отсутствует поле {e}"
             except Exception as e:
-                ai_text = f"❌ Ошибка при запросе к Groq: {e}"
+                ai_text = f"❌ Неожиданная ошибка: {str(e)}"
 
             st.session_state.ai_messages.append(
                 {"role": "assistant", "content": ai_text}
