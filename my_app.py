@@ -9,6 +9,9 @@ import os
 import requests
 import socket
 import io
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 # Modern, vivid styling with mobile responsiveness
 st.markdown("""
@@ -472,17 +475,6 @@ if "career_test_answers" not in st.session_state:
 if "profile" not in st.session_state:
     st.session_state.profile = {}
 
-if "tasks" not in st.session_state:
-    st.session_state.tasks = []
-
-# Regions for tasks board (default columns)
-if "task_regions" not in st.session_state:
-    st.session_state.task_regions = ["Canada", "USA", "Europe", "Asia"]
-
-# ID counter for tasks (ensures stable keys)
-if "task_id_counter" not in st.session_state:
-    st.session_state.task_id_counter = 0
-
 if "uni_favorites" not in st.session_state:
     st.session_state.uni_favorites = []
 
@@ -503,14 +495,6 @@ if "use_offline_ai" not in st.session_state:
 
 if "groq_api_url" not in st.session_state:
     st.session_state["groq_api_url"] = GROQ_API_URL
-
-# Ensure legacy tasks have region and id
-for t in st.session_state.tasks:
-    if "region" not in t:
-        t["region"] = st.session_state.task_regions[0] if st.session_state.task_regions else "Default"
-    if "id" not in t:
-        st.session_state.task_id_counter += 1
-        t["id"] = st.session_state.task_id_counter
 
 # ---------------------------------------
 # Global page config & header
@@ -606,31 +590,6 @@ def generate_export_pdf(export_payload: dict) -> bytes:
         story.append(t)
         story.append(Spacer(1, 8))
 
-    # Tasks
-    tsks = export_payload.get("tasks", [])
-    if tsks:
-        story.append(Paragraph("Tasks", heading))
-        table_data = [["Task", "Region", "Status", "Due"]]
-        for tk in tsks:
-            table_data.append([
-                tk.get("text", ""),
-                tk.get("region", ""),
-                "✓" if tk.get("done") else "—",
-                str(tk.get("deadline", ""))
-            ])
-        t = Table(table_data, colWidths=[180, 80, 50, 90])
-        t.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#667eea")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 10),
-            ("GRID", (0, 0), (-1, -1), 1, colors.grey),
-        ]))
-        story.append(t)
-
-    doc.build(story)
-    return buf.getvalue()
-
 # Hero section with modern design
 st.markdown("""
 <div class="hero">
@@ -696,19 +655,6 @@ def generate_export_pdf(export_payload: dict) -> bytes:
             story.append(Paragraph(f"{i}. " + "; ".join(parts), normal))
     else:
         story.append(Paragraph("No exam data", normal))
-    story.append(Spacer(1, 12))
-
-    # Tasks
-    story.append(Paragraph("Tasks", heading))
-    tasks = export_payload.get("tasks", [])
-    if tasks:
-        numbered_tasks = ListFlowable([
-            ListItem(Paragraph(f"{t.get('title')} — due: {t.get('due')} — done: {t.get('done')}", normal))
-            for t in tasks
-        ], bulletType="1", start="1")
-        story.append(numbered_tasks)
-    else:
-        story.append(Paragraph("No tasks", normal))
     story.append(Spacer(1, 12))
 
     # Favorites
@@ -820,7 +766,7 @@ async def get_ai_advice(profile: dict) -> str:
 
     exam_summary = []
     for name, data in exams.items():
-        txt = f"{name}: {data.get('status')}"
+        txt = f"{name}: {data.get('status', 'N/A')}"
         if data.get("score"):
             txt += f" (score {data['score']})"
         if data.get("expected"):
@@ -1091,45 +1037,6 @@ def generate_mock_advice(profile: dict, question: str = None) -> str:
     resp += "\n(Это локальная заглушка — при восстановлении сети приложение использует реальную модель.)"
     return resp
 
-# Helper functions for task board
-def move_task_region(task_id: int, direction: int):
-    """Move task to neighboring region: direction -1 (left), +1 (right)."""
-    regions = st.session_state.get("task_regions", [])
-    for t in st.session_state.tasks:
-        if t.get("id") == task_id:
-            try:
-                idx = regions.index(t.get("region")) if t.get("region") in regions else 0
-                new_idx = max(0, min(len(regions) - 1, idx + direction))
-                t["region"] = regions[new_idx]
-            except Exception:
-                t["region"] = regions[0] if regions else t.get("region")
-            break
-
-
-def reorder_task_in_region(task_id: int, up: bool = True):
-    """Move task up or down within its region."""
-    tasks = st.session_state.tasks
-    # find global index
-    for i, t in enumerate(tasks):
-        if t.get("id") == task_id:
-            region = t.get("region")
-            region_indices = [j for j, it in enumerate(tasks) if it.get("region") == region]
-            pos = region_indices.index(i)
-            if up and pos > 0:
-                j_swap = region_indices[pos - 1]
-                tasks[i], tasks[j_swap] = tasks[j_swap], tasks[i]
-            if (not up) and (pos < len(region_indices) - 1):
-                j_swap = region_indices[pos + 1]
-                tasks[i], tasks[j_swap] = tasks[j_swap], tasks[i]
-            break
-
-
-def toggle_task_done(task_id: int, done_value: bool):
-    for t in st.session_state.tasks:
-        if t.get("id") == task_id:
-            t["done"] = bool(done_value)
-            break
-
 # ---------------------------------------
 # Load data
 # -------
@@ -1287,7 +1194,6 @@ def calculate_holland_code():
 # -------
 tabs = st.tabs([
     "👤 Profile",
-    "✅ Tasks",
     "🏫 Universities",
     "📅 Deadlines",
     "📚 Preparation",
@@ -1431,134 +1337,11 @@ with tabs[0]:
                 st.write(f"⏳ **{exam_name}**: Expected {expected} (planned {planned_date})")
 
 # ---------------------------------------
-# Tasks Tab — Regional Kanban
-# ---------------------------------------
-with tabs[1]:
-    st.header("✅ Tasks — Regional Board")
-    st.caption("Organize tasks by region. Add custom regions and manage tasks (move, reorder, complete).")
-
-    # Regions manager
-    st.subheader("Regions")
-    col_r1, col_r2 = st.columns([3, 1])
-    with col_r1:
-        st.write(", ".join(st.session_state.task_regions))
-        new_region = st.text_input("Add region", key="add_region_input")
-    with col_r2:
-        if st.button("Add region", key="add_region_btn"):
-            nr = new_region.strip()
-            if nr and nr not in st.session_state.task_regions:
-                st.session_state.task_regions.append(nr)
-                st.success(f"Region '{nr}' added.")
-                st.rerun()
-
-    rem_region = st.selectbox("Remove region", [""] + st.session_state.task_regions, key="remove_region_select")
-    if rem_region:
-        if st.button("Remove region", key="remove_region_btn"):
-            if rem_region in st.session_state.task_regions:
-                # move tasks in removed region to first region
-                target = st.session_state.task_regions[0] if st.session_state.task_regions else None
-                for t in st.session_state.tasks:
-                    if t.get("region") == rem_region:
-                        t["region"] = target
-                st.session_state.task_regions.remove(rem_region)
-                st.success(f"Region '{rem_region}' removed.")
-                st.rerun()
-
-    st.markdown("---")
-
-    # Add task form
-    with st.form("add_task_form"):
-        c1, c2, c3 = st.columns([4, 2, 1])
-        with c1:
-            task_title = st.text_input("Task title", key="new_task_title")
-        with c2:
-            task_due = st.date_input("Due date", value=date.today(), key="new_task_due")
-        with c3:
-            task_region = st.selectbox("Region", st.session_state.task_regions, key="new_task_region")
-        added = st.form_submit_button("➕ Add task")
-        if added and task_title.strip():
-            st.session_state.task_id_counter = st.session_state.get("task_id_counter", 0) + 1
-            st.session_state.tasks.append({
-                "id": st.session_state.task_id_counter,
-                "title": task_title.strip(),
-                "due": str(task_due),
-                "done": False,
-                "region": task_region,
-            })
-            st.success("Task added.")
-            st.rerun()
-
-    st.markdown("---")
-
-    # Board
-    regions = st.session_state.task_regions
-    if not regions:
-        st.info("No regions defined. Add a region to get started.")
-    else:
-        cols = st.columns(len(regions))
-        for idx, region in enumerate(regions):
-            with cols[idx]:
-                st.subheader(region)
-                region_tasks = [t for t in st.session_state.tasks if t.get("region") == region]
-                if not region_tasks:
-                    st.info("No tasks here. Add one above.")
-                else:
-                    for t in list(region_tasks):
-                        st.markdown("---")
-                        st.markdown(f"**{t.get('title')}**")
-                        st.caption(f"Due: {t.get('due')}")
-
-                        # Done checkbox
-                        checked = st.checkbox("Done", value=t.get("done", False), key=f"done_{t['id']}")
-                        if checked != t.get("done", False):
-                            toggle_task_done(t["id"], checked)
-                            st.rerun()
-
-                        b1, b2, b3, b4 = st.columns([0.25, 0.25, 0.25, 0.25])
-                        if b1.button("◀", key=f"left_{t['id']}"):
-                            move_task_region(t["id"], -1)
-                            st.rerun()
-                        if b2.button("▶", key=f"right_{t['id']}"):
-                            move_task_region(t["id"], 1)
-                            st.rerun()
-                        if b3.button("🔼", key=f"up_{t['id']}"):
-                            reorder_task_in_region(t["id"], up=True)
-                            st.rerun()
-                        if b4.button("🔽", key=f"down_{t['id']}"):
-                            reorder_task_in_region(t["id"], up=False)
-                            st.rerun()
-
-                        e1, e2 = st.columns([3,1])
-                        if e2.button("🗑", key=f"del_{t['id']}"):
-                            st.session_state.tasks = [x for x in st.session_state.tasks if x.get("id") != t["id"]]
-                            st.rerun()
-
-                        # Edit inline
-                        if st.button("✏️ Edit", key=f"edit_{t['id']}"):
-                            st.session_state._edit_task = t['id']
-                            st.rerun()
-
-                        if st.session_state.get("_edit_task") == t['id']:
-                            with st.form(f"edit_form_{t['id']}"):
-                                new_title = st.text_input("Title", value=t['title'], key=f"edit_title_{t['id']}")
-                                new_due = st.date_input("Due", value=pd.to_datetime(t['due']).date(), key=f"edit_due_{t['id']}")
-                                new_region = st.selectbox("Region", st.session_state.task_regions, index=st.session_state.task_regions.index(t['region']) if t['region'] in st.session_state.task_regions else 0, key=f"edit_region_{t['id']}")
-                                save_edit = st.form_submit_button("Save")
-                                if save_edit:
-                                    for task in st.session_state.tasks:
-                                        if task.get('id') == t['id']:
-                                            task['title'] = new_title.strip()
-                                            task['due'] = str(new_due)
-                                            task['region'] = new_region
-                                    st.session_state._edit_task = None
-                                    st.rerun()
-
-# ---------------------------------------
 # Universities Tab
 # ---------------------------------------
 
 
-with tabs[2]:
+with tabs[1]:
     st.header("Universities 🌍")
     st.caption("Ищи университеты по названию или коду страны и сразу переходи на их сайт. Плюс — избранное и рандомный выбор.")
 
@@ -1668,7 +1451,7 @@ with tabs[2]:
 # ---------------------------------------
 # Deadlines & Dashboard Tab
 # ---------------------------------------
-with tabs[3]:
+with tabs[2]:
     st.header("📅 Deadlines")
     st.caption("Track application, scholarship and other important dates.")
 
@@ -1723,9 +1506,6 @@ with tabs[3]:
     st.header("Progress Dashboard")
     col1, col2, col3 = st.columns(3)
     with col1:
-        total_tasks = len(st.session_state.tasks)
-        done_tasks = sum(1 for t in st.session_state.tasks if t.get("done"))
-        st.metric("Tasks done", f"{done_tasks}/{total_tasks}")
         exams = st.session_state.profile.get("exams", {})
         planned = sum(1 for k, v in exams.items() if v.get("status") == "Planned")
         taken = sum(1 for k, v in exams.items() if v.get("status") == "Already taken")
@@ -1741,7 +1521,6 @@ with tabs[3]:
     st.markdown("---")
     export_payload_full = {
         "profile": st.session_state.profile,
-        "tasks": st.session_state.tasks,
         "favorites": st.session_state.uni_favorites,
         "deadlines": st.session_state.deadlines,
         "notes": st.session_state.uni_notes,
@@ -1750,7 +1529,7 @@ with tabs[3]:
         try:
             pdf_bytes = generate_export_pdf(export_payload_full)
             st.download_button(
-                "Export all data (profile, tasks, favorites, deadlines, notes) as PDF",
+                "Export all data (profile, favorites, deadlines, notes) as PDF",
                 data=pdf_bytes,
                 file_name="college_planner_export.pdf",
                 mime="application/pdf",
@@ -1758,14 +1537,14 @@ with tabs[3]:
         except Exception as e:
             st.error("PDF export failed: " + str(e))
             st.download_button(
-                "Export all data (profile, tasks, favorites, deadlines, notes) (JSON fallback)",
+                "Export all data (profile, favorites, deadlines, notes) (JSON fallback)",
                 data=json.dumps(export_payload_full, indent=2),
                 file_name="college_planner_export.json",
             )
     else:
         st.warning("PDF export unavailable — 'reportlab' is not installed. Run `pip install reportlab` or add it to requirements.txt and redeploy.")
         st.download_button(
-            "Export all data (profile, tasks, favorites, deadlines, notes) (JSON)",
+            "Export all data (profile, favorites, deadlines, notes) (JSON)",
             data=json.dumps(export_payload_full, indent=2),
             file_name="college_planner_export.json",
         )
@@ -1773,7 +1552,7 @@ with tabs[3]:
     # JSON import removed (PDF-only workflow)
 
 # --- NEW: Preparation Tab (fixed with proper with/expander structure) ---
-with tabs[4]:
+with tabs[3]:
     st.header("📚 Preparation Materials")
     st.caption("Resources, guides and practice materials for popular exams. Раскрой секции для деталей.")
 
@@ -1964,25 +1743,9 @@ with tabs[4]:
 # ---------------------------------------
 # AI Advisor Tab
 # ---------------------------------------
-with tabs[5]:
+with tabs[4]:
     st.header("💡 AI Advisor — персональные советы")
-    st.caption("Задай вопрос по профориентации, выбору вуза или подготовке к экзаменам.")
-
-    # Check if API key is configured
-    if not GROQ_API_KEY or GROQ_API_KEY == "":
-        st.error("""
-        ⚠️ **Groq API ключ не настроен!**
-        
-        Чтобы использовать AI Advisor:
-        1. Получить бесплатный API ключ на [console.groq.com](https://console.groq.com/keys)
-        2. Добавить в файл `.env` (в той же папке с my_app.py):
-           ```
-           GROQ_API_KEY=gsk_your_key_here
-           ```
-        3. Убедиться что установлен python-dotenv: `pip install python-dotenv`
-        4. Перезапустить приложение
-        """)
-        st.stop()
+    st.caption("Задай вопрос по профориентации, выбору вузы или подготовке к экзаменам.")
 
     profile = st.session_state.profile
     if not profile.get("gpa"):
@@ -2020,7 +1783,33 @@ with tabs[5]:
         if user_input:
             st.session_state.ai_messages.append({"role": "user", "content": user_input})
 
-            profile_summary = json.dumps(profile, ensure_ascii=False, indent=2)
+            # Format profile as readable list instead of JSON
+            profile_lines = []
+            profile_lines.append(f"- GPA: {profile.get('gpa', '—')}")
+            profile_lines.append(f"- Intended Major: {profile.get('major', '—')}")
+            profile_lines.append(f"- School: {profile.get('school', '—')}")
+            
+            awards = profile.get('awards', [])
+            if awards:
+                profile_lines.append("- Awards & Activities:")
+                for award in awards:
+                    profile_lines.append(f"  • {award}")
+            
+            exams = profile.get('exams', {})
+            if exams:
+                profile_lines.append("- Exams:")
+                for exam_name, exam_data in exams.items():
+                    status = exam_data.get('status', 'N/A')
+                    profile_lines.append(f"  • {exam_name}: {status}")
+                    if exam_data.get('score'):
+                        profile_lines.append(f"    Score: {exam_data['score']}")
+                    if exam_data.get('expected'):
+                        profile_lines.append(f"    Expected: {exam_data['expected']}")
+                    if exam_data.get('date'):
+                        profile_lines.append(f"    Date: {exam_data['date']}")
+            
+            profile_summary = "\n".join(profile_lines)
+            
             system_prompt = {
                 "role": "system",
                 "content": (
@@ -2029,7 +1818,7 @@ with tabs[5]:
                     "Пиши по-русски, если вопрос задан по-русски."
                 ),
             }
-
+            
             messages = [system_prompt] + st.session_state.ai_messages[-6:]
             messages[-1]["content"] = (
                 f"Профиль студента:\n{profile_summary}\n\n"
@@ -2080,4 +1869,3 @@ with tabs[5]:
                 {"role": "assistant", "content": ai_text}
             )
             st.rerun()
-
